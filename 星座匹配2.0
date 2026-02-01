@@ -1,0 +1,2217 @@
+<html lang="zh-CN"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星座匹配 - 探索你的星座缘分</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- 知晓云 SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.12.0/dist/av-min.js"></script>
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1', // 主色调 - 靛蓝色
+                        secondary: '#f472b6', // 辅助色 - 粉色
+                        accent: '#8b5cf6', // 强调色 - 紫色
+                        fire: '#f97316', // 火象星座色
+                        earth: '#84cc16', // 土象星座色
+                        air: '#06b6d4', // 风象星座色
+                        water: '#3b82f6', // 水象星座色
+                        dark: '#1e293b', // 深色背景
+                        light: '#f8fafc', // 浅色背景
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 5px rgba(99, 102, 241, 0.5)' },
+                            '100%': { boxShadow: '0 0 20px rgba(99, 102, 241, 0.8), 0 0 30px rgba(99, 102, 241, 0.6)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .text-shadow-lg {
+                text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            }
+            .bg-glass {
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            }
+            .gradient-bg {
+                background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+            }
+            .zodiac-card {
+                transition: all 0.3s ease;
+            }
+            .zodiac-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+            }
+            .progress-bar {
+                transition: width 1s ease-in-out;
+            }
+            .constellation-icon {
+                transition: all 0.3s ease;
+            }
+            .constellation-icon:hover {
+                transform: scale(1.1) rotate(5deg);
+                filter: brightness(1.2);
+            }
+            .floating {
+                animation: float 6s ease-in-out infinite;
+            }
+            .floating-delay-1 {
+                animation-delay: 1s;
+            }
+            .floating-delay-2 {
+                animation-delay: 2s;
+            }
+            .floating-delay-3 {
+                animation-delay: 3s;
+            }
+            .star-glow {
+                animation: star-glow 2s ease-in-out infinite alternate;
+            }
+            .bg-pattern {
+                background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-dark to-gray-900 text-light overflow-x-hidden">
+    <!-- 背景星星和星座图案 -->
+    <div id="stars" class="fixed inset-0 z-0"></div>
+    <div id="constellation-patterns" class="fixed inset-0 z-0 pointer-events-none"></div>
+    <!-- 全屏背景图 -->
+    <div class="fixed inset-0 z-[-1] bg-cover bg-center" style="background-image: url('https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/7e027e0bf23740959df7fd8dad2049b9~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=2026020116393397E102F1CD556852939C&rrcfp=f06b921b&x-expires=1772527186&x-signature=2dCzoeFB26Xwh7uXVdZvXIfWI2w%3D'); opacity: 0.7;"></div>
+    
+    <!-- 页面容器 -->
+    <div class="container mx-auto px-4 py-8 relative z-10">
+        <!-- 标题部分 -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-6xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary animate-glow">星座匹配</h1>
+            <p class="text-xl text-gray-300 max-w-2xl mx-auto">探索你的星座属性，发现与其他星座的缘分指数</p>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="max-w-4xl mx-auto">
+            <!-- 输入表单部分 -->
+            <section id="input-section" class="bg-glass rounded-2xl p-6 md:p-8 mb-12">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- 第一个人信息 -->
+                    <div class="space-y-6">
+                        <h2 class="text-2xl font-semibold text-primary flex items-center">
+                            <i class="fa fa-user-circle mr-2"></i> 你的信息
+                        </h2>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label for="name1" class="block text-sm font-medium text-gray-300 mb-1">姓名</label>
+                                <input type="text" id="name1" class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">性别</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="gender1" value="male" checked class="form-radio text-primary">
+                                        <span class="ml-2">男</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="gender1" value="female" class="form-radio text-primary">
+                                        <span class="ml-2">女</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">生日类型</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="calendar1" value="solar" checked="" class="form-radio text-primary">
+                                        <span class="ml-2">阳历</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="calendar1" value="lunar" class="form-radio text-primary">
+                                        <span class="ml-2">阴历</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="birthdate1" class="block text-sm font-medium text-gray-300 mb-1">生日</label>
+                                <input type="date" id="birthdate1" class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                            
+                            <div>
+                                <label for="birthplace1" class="block text-sm font-medium text-gray-300 mb-1">出生地（可选）</label>
+                                <input type="text" id="birthplace1" placeholder="例如：北京" class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-primary">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 第二个人信息 -->
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-2xl font-semibold text-secondary flex items-center">
+                                <i class="fa fa-user-plus mr-2"></i> 对方信息
+                            </h2>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="enable-person2" checked="" class="form-checkbox h-5 w-5 text-secondary rounded border-gray-600 bg-gray-700 focus:ring-secondary">
+                                <span class="ml-2 text-sm text-gray-300">启用对方信息</span>
+                            </label>
+                        </div>
+                        
+                        <div id="person2-form" class="space-y-4">
+                            <div>
+                                <label for="name2" class="block text-sm font-medium text-gray-300 mb-1">姓名</label>
+                                <input type="text" id="name2" class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-secondary">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">性别</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="gender2" value="male" checked class="form-radio text-secondary">
+                                        <span class="ml-2">男</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="gender2" value="female" class="form-radio text-secondary">
+                                        <span class="ml-2">女</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">生日类型</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="calendar2" value="solar" checked="" class="form-radio text-secondary">
+                                        <span class="ml-2">阳历</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="calendar2" value="lunar" class="form-radio text-secondary">
+                                        <span class="ml-2">阴历</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="birthdate2" class="block text-sm font-medium text-gray-300 mb-1">生日</label>
+                                <input type="date" id="birthdate2" class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-secondary">
+                            </div>
+                            
+                            <div>
+                                <label for="birthplace2" class="block text-sm font-medium text-gray-300 mb-1">出生地（可选）</label>
+                                <input type="text" id="birthplace2" placeholder="例如：上海" class="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-secondary">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 关系类型选择 -->
+                <div class="mt-8">
+                    <label class="block text-sm font-medium text-gray-300 mb-3">关系类型</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="relationship" value="love" checked="" class="hidden relationship-radio">
+                            <div class="border-2 border-transparent hover:border-primary rounded-lg p-4 text-center transition-all bg-gray-800 hover:bg-gray-700 relationship-option">
+                                <i class="fa fa-heart text-2xl text-red-500 mb-2"></i>
+                                <p class="font-medium">恋人关系</p>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="relationship" value="friend" class="hidden relationship-radio">
+                            <div class="border-2 border-transparent hover:border-primary rounded-lg p-4 text-center transition-all bg-gray-800 hover:bg-gray-700 relationship-option">
+                                <i class="fa fa-users text-2xl text-blue-500 mb-2"></i>
+                                <p class="font-medium">朋友关系</p>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="relationship" value="colleague" class="hidden relationship-radio">
+                            <div class="border-2 border-transparent hover:border-primary rounded-lg p-4 text-center transition-all bg-gray-800 hover:bg-gray-700 relationship-option">
+                                <i class="fa fa-briefcase text-2xl text-green-500 mb-2"></i>
+                                <p class="font-medium">同事关系</p>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="relationship" value="family" class="hidden relationship-radio">
+                            <div class="border-2 border-transparent hover:border-primary rounded-lg p-4 text-center transition-all bg-gray-800 hover:bg-gray-700 relationship-option">
+                                <i class="fa fa-home text-2xl text-yellow-500 mb-2"></i>
+                                <p class="font-medium">家人关系</p>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="relationship" value="other" class="hidden relationship-radio">
+                            <div class="border-2 border-transparent hover:border-primary rounded-lg p-4 text-center transition-all bg-gray-800 hover:bg-gray-700 relationship-option">
+                                <i class="fa fa-star text-2xl text-purple-500 mb-2"></i>
+                                <p class="font-medium">其他关系</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- 提交按钮 -->
+                <div class="mt-8 text-center">
+                    <button id="calculate-btn" class="px-8 py-3 bg-gradient-to-r from-primary to-secondary rounded-full text-white font-medium text-lg hover:opacity-90 transition-opacity transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-gray-900">
+                        <i class="fa fa-calculator mr-2"></i> 开始计算
+                    </button>
+                </div>
+            </section>
+            
+            <!-- 结果部分 - 初始隐藏 -->
+            <section id="result-section" class="hidden">
+                <!-- 个人星座信息 -->
+                <div id="personal-info" class="bg-glass rounded-2xl p-6 md:p-8 mb-12">
+                    <h2 class="text-2xl font-semibold mb-6 text-center">个人星座信息</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- 第一个人星座信息 -->
+                        <div id="person1-info" class="space-y-4">
+                            <!-- 内容将通过JavaScript动态填充 -->
+                        </div>
+                        
+                        <!-- 第二个人星座信息 -->
+                        <div id="person2-info" class="space-y-4 hidden">
+                            <!-- 内容将通过JavaScript动态填充 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 星座匹配结果 -->
+                <div id="match-result" class="bg-glass rounded-2xl p-6 md:p-8 mb-12">
+                    <!-- 两个人的匹配结果 -->
+                    <div id="two-person-match" class="hidden">
+                        <h2 class="text-2xl font-semibold mb-6 text-center">星座匹配度</h2>
+                        
+                        <div class="flex justify-center mb-8">
+                            <div class="w-full max-w-md">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span id="match-name1" class="font-medium"></span>
+                                    <span id="match-score" class="font-bold text-2xl text-primary"></span>
+                                    <span id="match-name2" class="font-medium"></span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-4">
+                                    <div id="match-progress" class="bg-gradient-to-r from-primary to-secondary h-4 rounded-full progress-bar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-800 rounded-lg p-4 mb-6">
+                            <h3 class="font-semibold mb-2 text-primary">匹配分析</h3>
+                            <p id="match-analysis" class="text-gray-300"></p>
+                        </div>
+                        
+                        <div class="bg-gray-800 rounded-lg p-4">
+                            <h3 class="font-semibold mb-2 text-primary">相处建议</h3>
+                            <ul id="match-suggestions" class="list-disc list-inside text-gray-300 space-y-2">
+                                <!-- 内容将通过JavaScript动态填充 -->
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- 与所有星座的匹配结果 -->
+                    <div id="all-match">
+                        <h2 class="text-2xl font-semibold mb-6 text-center">与各星座的匹配度</h2>
+                        
+                        <div class="flex flex-col lg:flex-row gap-8 items-start">
+                            <!-- 左侧轮盘 -->
+                            <div class="w-full lg:w-1/2 flex flex-col items-center">
+                                <div class="relative">
+                                    <div id="wheel-container" class="relative w-80 h-80">
+                                        <canvas id="wheel-canvas" width="320" height="320" class="cursor-pointer"></canvas>
+                                        <div id="wheel-pointer" class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-2 text-4xl text-white drop-shadow-lg">
+                                            <i class="fa fa-caret-down"></i>
+                                        </div>
+                                    </div>
+                                    <p class="text-center text-gray-400 mt-4 text-sm">点击轮盘或拖动旋转</p>
+                                </div>
+                            </div>
+                            
+                            <!-- 右侧详细信息 -->
+                            <div class="w-full lg:w-1/2">
+                                <div id="match-detail" class="bg-glass rounded-2xl p-6 min-h-96">
+                                    <div id="match-detail-content" class="text-center">
+                                        <div class="text-gray-400 mb-4">
+                                            <i class="fa fa-hand-pointer-o text-4xl mb-2"></i>
+                                            <p>请转动轮盘查看详细匹配信息</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 历史匹配记录 -->
+                <div id="history-section" class="bg-glass rounded-2xl p-6 md:p-8 mb-12">
+                    <h2 class="text-2xl font-semibold mb-6 text-center">历史匹配记录</h2>
+                    <div id="history-list" class="space-y-4">
+                        <!-- 内容将通过JavaScript动态填充 -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- 返回顶部按钮 -->
+    <button id="back-to-top" class="fixed bottom-8 right-8 bg-primary text-white p-3 rounded-full shadow-lg opacity-0 transition-opacity duration-300">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+
+    <script>
+        // 星座图标URL映射
+        const constellationIcons = {
+            "白羊座": "https://p3-doubao-search-sign.byteimg.com/labis/2d77cd6608d42afb61d471c9a31cb847~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1785487194&x-signature=fV4Lpypmyn%2Fk04SSVhGZuc2ou8Q%3D",
+            "金牛座": "https://p3-doubao-search-sign.byteimg.com/labis/2d77cd6608d42afb61d471c9a31cb847~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1785487194&x-signature=fV4Lpypmyn%2Fk04SSVhGZuc2ou8Q%3D",
+            "双子座": "https://p3-doubao-search-sign.byteimg.com/labis/2d77cd6608d42afb61d471c9a31cb847~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1785487194&x-signature=fV4Lpypmyn%2Fk04SSVhGZuc2ou8Q%3D",
+            "巨蟹座": "https://p3-doubao-search-sign.byteimg.com/labis/2d77cd6608d42afb61d471c9a31cb847~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1785487194&x-signature=fV4Lpypmyn%2Fk04SSVhGZuc2ou8Q%3D",
+            "狮子座": "https://p3-doubao-search-sign.byteimg.com/labis/2d77cd6608d42afb61d471c9a31cb847~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1785487194&x-signature=fV4Lpypmyn%2Fk04SSVhGZuc2ou8Q%3D",
+            "处女座": "https://p3-doubao-search-sign.byteimg.com/labis/2d77cd6608d42afb61d471c9a31cb847~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1785487194&x-signature=fV4Lpypmyn%2Fk04SSVhGZuc2ou8Q%3D",
+            "天秤座": "https://p3-doubao-search-sign.byteimg.com/labis/2d77cd6608d42afb61d471c9a31cb847~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1785487194&x-signature=fV4Lpypmyn%2Fk04SSVhGZuc2ou8Q%3D",
+            "天蝎座": "https://p3-doubao-search-sign.byteimg.com/labis/2d77cd6608d42afb61d471c9a31cb847~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1785487194&x-signature=fV4Lpypmyn%2Fk04SSVhGZuc2ou8Q%3D",
+            "射手座": "https://p3-doubao-search-sign.byteimg.com/labis/2d77cd6608d42afb61d471c9a31cb847~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1785487194&x-signature=fV4Lpypmyn%2Fk04SSVhGZuc2ou8Q%3D",
+            "摩羯座": "https://p3-doubao-search-sign.byteimg.com/labis/2d77cd6608d42afb61d471c9a31cb847~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1785487194&x-signature=fV4Lpypmyn%2Fk04SSVhGZuc2ou8Q%3D",
+            "水瓶座": "https://p3-doubao-search-sign.byteimg.com/labis/2d77cd6608d42afb61d471c9a31cb847~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1785487194&x-signature=fV4Lpypmyn%2Fk04SSVhGZuc2ou8Q%3D",
+            "双鱼座": "https://p3-doubao-search-sign.byteimg.com/labis/2d77cd6608d42afb61d471c9a31cb847~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1785487194&x-signature=fV4Lpypmyn%2Fk04SSVhGZuc2ou8Q%3D"
+        };
+
+        // 星座数据
+        const constellationData = [
+            {
+                id: 1,
+                name: "白羊座",
+                symbol: "♈",
+                dateRange: { start: { month: 3, day: 21 }, end: { month: 4, day: 19 } },
+                element: "火",
+                color: "fire",
+                characteristics: ["热情", "冲动", "勇敢", "自信"],
+                strengths: ["行动力强", "直率勇敢", "充满竞争意识"],
+                weaknesses: ["自我中心", "缺乏共情能力", "易怒"],
+                introduction: "白羊座是黄道第一宫，象征生命的原始驱动力。他们天生具有开拓精神，喜欢挑战权威和尝试新事物。性格直来直往，厌恶虚伪，但容易因急躁而冲动行事。在团队中常扮演\"先锋者\"角色，但缺乏耐心，可能忽视细节。",
+                loveStyle: "主动追求心仪对象，但热情易冷却；需要能跟上他们节奏的伴侣。",
+                career: "适合创业、销售或竞技类工作，需学会团队协作。"
+            },
+            {
+                id: 2,
+                name: "金牛座",
+                symbol: "♉",
+                dateRange: { start: { month: 4, day: 20 }, end: { month: 5, day: 20 } },
+                element: "土",
+                color: "earth",
+                characteristics: ["稳重", "务实", "固执", "享受"],
+                strengths: ["稳重务实", "有毅力", "懂得享受生活", "忠诚可靠", "审美力强"],
+                weaknesses: ["固执己见", "抗拒改变", "物质欲望较强", "有时过于慵懒"],
+                introduction: "金牛座由金星守护，注重生活品质和实际利益。他们做事循序渐进，具有强大的耐力，但抗拒突发变化。对美食、艺术有独特品味，但可能因固执而拒绝尝试新事物。理财能力出众，但消费易走极端。",
+                loveStyle: "追求稳定长久的感情，需通过物质和肢体接触表达爱意。",
+                career: "适合金融、餐饮或艺术领域，需克服保守心态。"
+            },
+            {
+                id: 3,
+                name: "双子座",
+                symbol: "♊",
+                dateRange: { start: { month: 5, day: 21 }, end: { month: 6, day: 21 } },
+                element: "风",
+                color: "air",
+                characteristics: ["聪明", "善变", "好奇", "灵活"],
+                strengths: ["聪明灵活", "好奇心强", "善于沟通", "适应力佳", "风趣幽默"],
+                weaknesses: ["注意力易分散", "缺乏深度", "善变不定", "易给人浮躁感"],
+                introduction: "双子座由水星守护，象征信息的传递者。他们兴趣广泛，擅长快速学习新技能，但缺乏深度钻研的耐心。社交中幽默风趣，能轻松融入不同群体，但可能因\"双面性\"显得不够真诚。思维跳跃，常同时处理多任务。",
+                loveStyle: "享受精神交流的乐趣，但容易因追求新鲜感而移情。",
+                career: "适合传媒、营销或教育培训，需培养专注力。"
+            },
+            {
+                id: 4,
+                name: "巨蟹座",
+                symbol: "♋",
+                dateRange: { start: { month: 6, day: 22 }, end: { month: 7, day: 22 } },
+                element: "水",
+                color: "water",
+                characteristics: ["敏感", "顾家", "情感丰富", "保护欲强"],
+                strengths: ["情感细腻", "富有同情心", "重视家庭", "记忆力强", "保护欲足"],
+                weaknesses: ["情绪化敏感", "过度防御", "易沉溺过去", "有时过度依赖"],
+                introduction: "巨蟹座由月亮守护，象征家庭与安全感。他们共情能力出众，擅长照顾他人，但容易因敏感多疑而情绪化。对过去有强烈执念，喜欢收藏旧物，可能因过度保护自我而拒绝改变。社交中被动谨慎，需长时间建立信任。",
+                loveStyle: "渴望稳定家庭，用无微不至的关怀表达爱意，但易情绪绑架伴侣。",
+                career: "适合家政、心理咨询或历史研究，需克服情绪内耗。"
+            },
+            {
+                id: 5,
+                name: "狮子座",
+                symbol: "♌",
+                dateRange: { start: { month: 7, day: 23 }, end: { month: 8, day: 22 } },
+                element: "火",
+                color: "fire",
+                characteristics: ["自信", "热情", "领导力", "慷慨"],
+                strengths: ["自信慷慨", "渴望关注", "具有领导力"],
+                weaknesses: ["虚荣心强", "控制欲过剩", "易被奉承蒙蔽"],
+                introduction: "狮子座的守护星是太阳，象征光芒与创造力。他们天生具有舞台魅力，擅长调动气氛，但可能过度在意他人评价。内心渴望被认可，会用夸张方式证明自己。重视尊严，对朋友忠诚，但可能因固执而拒绝妥协。",
+                loveStyle: "喜欢浪漫热烈的感情，需要伴侣的崇拜和赞美。",
+                career: "适合演艺、管理或教育行业，需避免独断专行。"
+            },
+            {
+                id: 6,
+                name: "处女座",
+                symbol: "♍",
+                dateRange: { start: { month: 8, day: 23 }, end: { month: 9, day: 22 } },
+                element: "土",
+                color: "earth",
+                characteristics: ["完美主义", "细致", "分析力强", "服务型"],
+                strengths: ["细致认真", "分析力强", "追求完美", "务实可靠", "乐于服务"],
+                weaknesses: ["挑剔苛责", "过度担忧", "易钻牛角尖", "略显拘谨"],
+                introduction: "处女座以细致和批判性思维著称，擅长分析问题并制定计划。他们注重细节到吹毛求疵的程度，常因过度焦虑影响效率。具有强烈的责任感，但可能因挑剔引发人际关系紧张。内心敏感，却习惯用理性掩盖情绪。",
+                loveStyle: "谨慎选择伴侣，通过实际行动表达关心，但容易过度挑剔。",
+                career: "适合医疗、科研或行政工作，需学会包容不完美。"
+            },
+            {
+                id: 7,
+                name: "天秤座",
+                symbol: "♎",
+                dateRange: { start: { month: 9, day: 23 }, end: { month: 10, day: 23 } },
+                element: "风",
+                color: "air",
+                characteristics: ["平衡", "公正", "优雅", "社交"],
+                strengths: ["追求和谐", "优雅公正", "善于协调", "社交力强", "审美出众"],
+                weaknesses: ["优柔寡断", "回避冲突", "过分在意他人看法", "有时显得表面"],
+                introduction: "天秤座是黄道十二宫中的\"外交官\"，重视公平与平衡。他们擅长调解矛盾，但可能因过度在意他人看法而优柔寡断。对美感有独特追求，喜欢优雅的生活方式，但容易陷入选择困难。社交中注重礼节，但可能隐藏真实想法。",
+                loveStyle: "渴望灵魂伴侣，但容易为维持关系而委屈自己。",
+                career: "适合法律、设计或公关行业，需增强决断力。"
+            },
+            {
+                id: 8,
+                name: "天蝎座",
+                symbol: "♏",
+                dateRange: { start: { month: 10, day: 24 }, end: { month: 11, day: 22 } },
+                element: "水",
+                color: "water",
+                characteristics: ["深沉", "直觉", "执着", "占有欲"],
+                strengths: ["意志坚定", "洞察力深", "情感强烈", "忠诚专注", "有韧性"],
+                weaknesses: ["多疑善妒", "掌控欲强", "易记仇", "情绪极端", "不喜表露"],
+                introduction: "天蝎座由冥王星守护，象征死亡与重生。他们擅长挖掘真相，对人性有深刻认知，但容易陷入偏执。情感强烈，爱憎分明，信任一旦破裂会彻底疏离。具有强大的意志力和资源整合能力，但可能因猜忌导致人际关系紧张。",
+                loveStyle: "追求灵魂交融的深度关系，占有欲极强，易陷入虐恋。",
+                career: "适合侦查、金融或心理学领域，需学会宽恕与释怀。"
+            },
+            {
+                id: 9,
+                name: "射手座",
+                symbol: "♐",
+                dateRange: { start: { month: 11, day: 23 }, end: { month: 12, day: 21 } },
+                element: "火",
+                color: "fire",
+                characteristics: ["自由", "乐观", "探索", "哲学"],
+                strengths: ["乐观自由", "哲学思维", "追求精神成长"],
+                weaknesses: ["理想主义", "逃避现实", "缺乏边界感"],
+                introduction: "射手座代表对真理的探索，他们热爱旅行和学习，厌恶被规则束缚。思维宏观，能快速抓住问题本质，但执行力较弱。社交中幽默随和，但可能因直言不讳得罪人。对人生持开放态度，但缺乏持久专注力。",
+                loveStyle: "渴望灵魂伴侣，但容易因追求自由而逃避承诺。",
+                career: "适合学术、传媒或跨国领域，需培养责任感。"
+            },
+            {
+                id: 10,
+                name: "摩羯座",
+                symbol: "♑",
+                dateRange: { start: { month: 12, day: 22 }, end: { month: 1, day: 19 } },
+                element: "土",
+                color: "earth",
+                characteristics: ["务实", "野心", "自律", "传统"],
+                strengths: ["责任感强", "自律踏实", "有野心耐力", "计划周全", "值得信赖"],
+                weaknesses: ["过于严肃", "压抑情感", "现实功利", "有时显得冷漠固执"],
+                introduction: "摩羯座象征世俗成就的攀登者，他们早熟且现实，善于制定长期目标。表面冷静克制，内心渴望被认可。对权力和资源有强烈掌控欲，但可能因功利主义失去人情味。社交中谨慎保守，需多年积累才能建立信任。",
+                loveStyle: "选择伴侣时考虑现实条件，感情表达含蓄而持久。",
+                career: "适合政治、工程或企业管理，需平衡工作与生活。"
+            },
+            {
+                id: 11,
+                name: "水瓶座",
+                symbol: "♒",
+                dateRange: { start: { month: 1, day: 20 }, end: { month: 2, day: 18 } },
+                element: "风",
+                color: "air",
+                characteristics: ["创新", "独立", "理性", "人道"],
+                strengths: ["思维独立", "创新力强", "人道主义", "理性开放", "友善博爱"],
+                weaknesses: ["疏离抽离", "叛逆固执", "情感表达弱", "想法有时不切实际"],
+                introduction: "水瓶座由天王星守护，代表突破传统的创新者。他们追求独特的生活方式，反感权威和教条。思维前瞻，关注人类共同议题(如环保、平权)，但可能忽视身边人的情感需求。社交中友善却疏离，需要大量个人空间。",
+                loveStyle: "重视精神共鸣，抗拒传统婚姻模式，容易发展开放式关系。",
+                career: "适合科技、公益或新兴行业，需提升共情能力。"
+            },
+            {
+                id: 12,
+                name: "双鱼座",
+                symbol: "♓",
+                dateRange: { start: { month: 2, day: 19 }, end: { month: 3, day: 20 } },
+                element: "水",
+                color: "water",
+                characteristics: ["梦幻", "慈悲", "直觉", "适应力"],
+                strengths: ["富有同情心", "想象力丰富", "善解人意", "艺术感强", "包容度高"],
+                weaknesses: ["过度理想化", "逃避现实", "易受环境影响", "缺乏边界感"],
+                introduction: "双鱼座由海王星守护，象征梦想与灵性。他们具有艺术天赋和治愈力，但容易沉溺于幻想而逃避现实。同理心强到可能吸收他人情绪，需警惕被利用。生活缺乏条理，但关键时刻常凭直觉做出正确选择。",
+                loveStyle: "追求浪漫至上的爱情，容易陷入牺牲式关系。",
+                career: "适合艺术、慈善或灵修领域，需增强现实感。"
+            }
+        ];
+
+        // 星座匹配度数据
+        const compatibilityData = {
+            "love": {
+                "白羊座": {
+                    "白羊座": { rate: 80, description: "两个白羊座在一起，如同两团烈火相遇，热情四射但也容易灼伤彼此。你们都充满活力和冒险精神，能够理解对方的冲动和直接。", suggestions: ["学会互相让步，避免冲突升级", "给彼此一些个人空间", "共同参与挑战性活动，如户外运动或旅行"] },
+                    "金牛座": { rate: 75, description: "白羊座的冲动与金牛座的稳重形成鲜明对比。初期可能被彼此的差异吸引，但长期相处需要更多理解和妥协。", suggestions: ["白羊座需放慢节奏，金牛座需增加灵活性", "共同制定财务计划", "培养共同的兴趣爱好"] },
+                    "双子座": { rate: 90, description: "这是一对充满活力和变化的组合。双子座的机智和白羊座的行动力相得益彰，能够一起探索新事物。", suggestions: ["保持开放的沟通", "尊重彼此的独立性", "一起尝试新的活动和体验"] },
+                    "巨蟹座": { rate: 60, description: "白羊座的直接和巨蟹座的敏感可能导致误解。巨蟹座需要更多情感表达，而白羊座可能觉得过于黏人。", suggestions: ["白羊座需更多情感投入", "巨蟹座需理解对方的直率", "建立共同的家庭目标"] },
+                    "狮子座": { rate: 100, description: "这是一对充满激情和活力的完美组合。两个火象星座互相理解和欣赏，能够共同创造精彩的生活。", suggestions: ["保持互相尊重和欣赏", "避免过度竞争", "共同追求宏大目标"] },
+                    "处女座": { rate: 70, description: "白羊座的随性与处女座的完美主义形成挑战。需要更多的理解和妥协才能和谐相处。", suggestions: ["白羊座需注意细节", "处女座需放宽标准", "找到平衡点"] },
+                    "天秤座": { rate: 80, description: "天秤座的平衡与白羊座的直接形成互补。能够互相学习，共同成长。", suggestions: ["天秤座需更直接表达需求", "白羊座需更多考虑他人感受", "共同参与社交活动"] },
+                    "天蝎座": { rate: 65, description: "这是一对充满激情但也充满挑战的组合。天蝎座的占有欲与白羊座的独立性需要找到平衡点。", suggestions: ["建立信任和透明度", "尊重彼此的边界", "共同面对挑战"] },
+                    "射手座": { rate: 95, description: "两个火象星座的完美匹配，充满冒险精神和乐观态度。能够一起探索世界，共同成长。", suggestions: ["保持开放的心态", "共同学习和成长", "规划未来但保持灵活性"] },
+                    "摩羯座": { rate: 70, description: "摩羯座的务实与白羊座的冲动形成对比。需要更多的理解和妥协才能和谐相处。", suggestions: ["制定共同目标", "互相学习对方的优点", "保持耐心"] },
+                    "水瓶座": { rate: 85, description: "水瓶座的创新与白羊座的行动力形成强大组合。能够一起创造新事物，共同进步。", suggestions: ["保持开放的思想", "尊重彼此的独特性", "共同探索新领域"] },
+                    "双鱼座": { rate: 75, description: "双鱼座的敏感与白羊座的直接需要找到平衡点。能够互相补充，共同成长。", suggestions: ["白羊座需更多情感表达", "双鱼座需更直接沟通", "创造浪漫时刻"] }
+                },
+                "金牛座": {
+                    "白羊座": { rate: 75, description: "金牛座的稳重与白羊座的冲动形成对比。初期可能被彼此的差异吸引，但长期相处需要更多理解和妥协。", suggestions: ["金牛座需增加灵活性", "白羊座需放慢节奏", "共同享受生活的美好"] },
+                    "金牛座": { rate: 80, description: "两个金牛座在一起，能够建立稳定和舒适的关系。共同的价值观和生活方式让你们相处融洽。", suggestions: ["保持生活的新鲜感", "共同规划未来", "平衡工作和生活"] },
+                    "双子座": { rate: 75, description: "双子座的多变与金牛座的稳定形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["双子座需更多稳定性", "金牛座需增加灵活性", "找到共同兴趣"] },
+                    "巨蟹座": { rate: 85, description: "这是一对充满温情和稳定的组合。都重视家庭和安全感，能够建立深厚的感情。", suggestions: ["共同创造舒适的家", "定期家庭活动", "表达爱意和感激"] },
+                    "狮子座": { rate: 70, description: "狮子座的张扬与金牛座的低调形成对比。需要更多的理解和欣赏才能和谐相处。", suggestions: ["狮子座需更多考虑实际", "金牛座需更多表达情感", "找到共同兴趣"] },
+                    "处女座": { rate: 100, description: "这是一对完美的组合，处女座的细致与金牛座的务实相得益彰。能够共同创造稳定和美好的生活。", suggestions: ["共同规划未来", "分工合作", "保持沟通"] },
+                    "天秤座": { rate: 70, description: "天秤座的社交与金牛座的居家形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["平衡社交和独处时间", "共同创造美感", "互相理解"] },
+                    "天蝎座": { rate: 80, description: "天蝎座的深度与金牛座的稳定形成强大组合。能够建立深厚的信任和感情。", suggestions: ["建立信任和忠诚", "共同管理财务", "创造亲密时刻"] },
+                    "射手座": { rate: 60, description: "射手座的自由与金牛座的稳定形成挑战。需要更多的理解和妥协才能和谐相处。", suggestions: ["射手座需更多责任感", "金牛座需增加灵活性", "找到平衡点"] },
+                    "摩羯座": { rate: 95, description: "这是一对务实和稳定的组合。都重视事业和未来，能够共同创造成功的人生。", suggestions: ["共同制定长期目标", "互相支持事业", "平衡工作和生活"] },
+                    "水瓶座": { rate: 65, description: "水瓶座的创新与金牛座的传统形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["水瓶座需更多实际行动", "金牛座需开放思想", "找到共同点"] },
+                    "双鱼座": { rate: 90, description: "双鱼座的温柔与金牛座的稳重形成温馨组合。能够互相支持和理解，创造美好的生活。", suggestions: ["共同创造舒适的家", "表达情感和感激", "平衡现实和梦想"] }
+                },
+                "双子座": {
+                    "白羊座": { rate: 90, description: "这是一对充满活力和变化的组合。双子座的机智和白羊座的行动力相得益彰，能够一起探索新事物。", suggestions: ["保持开放的沟通", "尊重彼此的独立性", "一起尝试新的活动和体验"] },
+                    "金牛座": { rate: 75, description: "双子座的多变与金牛座的稳定形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["双子座需更多稳定性", "金牛座需增加灵活性", "找到共同兴趣"] },
+                    "双子座": { rate: 80, description: "两个双子座在一起，生活永远不会无聊。你们有共同的兴趣和思维方式，能够互相理解。", suggestions: ["保持沟通和分享", "一起学习和成长", "给彼此一些个人空间"] },
+                    "巨蟹座": { rate: 75, description: "双子座的理性与巨蟹座的感性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["双子座需更多情感表达", "巨蟹座需理解对方的理性", "创造共同的家庭回忆"] },
+                    "狮子座": { rate: 85, description: "狮子座的热情与双子座的机智形成有趣组合。能够互相欣赏和支持，创造精彩生活。", suggestions: ["互相欣赏和赞美", "共同参与社交活动", "保持生活的新鲜感"] },
+                    "处女座": { rate: 70, description: "处女座的细致与双子座的随性形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["双子座需注意细节", "处女座需放宽标准", "找到平衡点"] },
+                    "天秤座": { rate: 100, description: "这是一对完美的风象星座组合。都善于沟通和社交，能够建立深厚的精神连接。", suggestions: ["保持开放的沟通", "共同参与社交活动", "一起学习和成长"] },
+                    "天蝎座": { rate: 60, description: "天蝎座的深度与双子座的表面形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["双子座需更多深度交流", "天蝎座需放松控制", "建立信任"] },
+                    "射手座": { rate: 80, description: "两个喜欢自由和探索的星座组合。能够一起探索世界，共同成长。", suggestions: ["保持开放的心态", "共同学习和成长", "尊重彼此的独立性"] },
+                    "摩羯座": { rate: 65, description: "摩羯座的务实与双子座的随性形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["双子座需更多责任感", "摩羯座需增加灵活性", "找到共同点"] },
+                    "水瓶座": { rate: 95, description: "这是一对思想和交流的完美组合。都重视独立和创新，能够互相理解和支持。", suggestions: ["保持思想的交流", "共同探索新领域", "尊重彼此的独特性"] },
+                    "双鱼座": { rate: 70, description: "双鱼座的感性与双子座的理性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["双子座需更多情感表达", "双鱼座需更直接沟通", "创造共同的梦想"] }
+                },
+                "巨蟹座": {
+                    "白羊座": { rate: 60, description: "白羊座的直接和巨蟹座的敏感可能导致误解。巨蟹座需要更多情感表达，而白羊座可能觉得过于黏人。", suggestions: ["白羊座需更多情感投入", "巨蟹座需理解对方的直率", "建立共同的家庭目标"] },
+                    "金牛座": { rate: 85, description: "这是一对充满温情和稳定的组合。都重视家庭和安全感，能够建立深厚的感情。", suggestions: ["共同创造舒适的家", "定期家庭活动", "表达爱意和感激"] },
+                    "双子座": { rate: 75, description: "双子座的理性与巨蟹座的感性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["双子座需更多情感表达", "巨蟹座需理解对方的理性", "创造共同的家庭回忆"] },
+                    "巨蟹座": { rate: 80, description: "两个巨蟹座在一起，能够创造温馨和充满爱的家庭。你们互相理解和支持，共同面对生活的挑战。", suggestions: ["创造共同的家庭回忆", "定期家庭活动", "表达情感和感激"] },
+                    "狮子座": { rate: 75, description: "狮子座的自信与巨蟹座的敏感形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["狮子座需更多情感表达", "巨蟹座需理解对方的自信", "平衡自我和家庭"] },
+                    "处女座": { rate: 90, description: "处女座的细致与巨蟹座的关怀形成温馨组合。能够互相支持和理解，创造美好的家庭生活。", suggestions: ["共同创造舒适的家", "分工合作", "表达情感和感激"] },
+                    "天秤座": { rate: 65, description: "天秤座的社交与巨蟹座的居家形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["平衡社交和家庭时间", "共同创造美感", "互相理解"] },
+                    "天蝎座": { rate: 100, description: "这是一对情感深度和忠诚度的完美组合。都重视情感连接和家庭，能够建立深厚的感情。", suggestions: ["建立信任和忠诚", "创造亲密时刻", "共同面对挑战"] },
+                    "射手座": { rate: 70, description: "射手座的自由与巨蟹座的家庭观念形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["射手座需更多家庭责任感", "巨蟹座需理解对方的自由需求", "找到平衡点"] },
+                    "摩羯座": { rate: 80, description: "摩羯座的稳定与巨蟹座的关怀形成可靠组合。能够互相支持和理解，共同创造稳定的家庭生活。", suggestions: ["共同规划未来", "互相支持事业和家庭", "表达情感和感激"] },
+                    "水瓶座": { rate: 70, description: "水瓶座的理性与巨蟹座的感性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["水瓶座需更多情感表达", "巨蟹座需理解对方的理性", "找到共同点"] },
+                    "双鱼座": { rate: 100, description: "这是一对情感深度和同理心的完美组合。都重视情感连接和家庭，能够互相理解和支持。", suggestions: ["创造浪漫时刻", "表达情感和感激", "共同面对生活的挑战"] }
+                },
+                "狮子座": {
+                    "白羊座": { rate: 100, description: "这是一对充满激情和活力的完美组合。两个火象星座互相理解和欣赏，能够共同创造精彩的生活。", suggestions: ["保持互相尊重和欣赏", "避免过度竞争", "共同追求宏大目标"] },
+                    "金牛座": { rate: 70, description: "狮子座的张扬与金牛座的低调形成对比。需要更多的理解和欣赏才能和谐相处。", suggestions: ["狮子座需更多考虑实际", "金牛座需更多表达情感", "找到共同兴趣"] },
+                    "双子座": { rate: 85, description: "狮子座的热情与双子座的机智形成有趣组合。能够互相欣赏和支持，创造精彩生活。", suggestions: ["互相欣赏和赞美", "共同参与社交活动", "保持生活的新鲜感"] },
+                    "巨蟹座": { rate: 75, description: "狮子座的自信与巨蟹座的敏感形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["狮子座需更多情感表达", "巨蟹座需理解对方的自信", "平衡自我和家庭"] },
+                    "狮子座": { rate: 80, description: "两个狮子座在一起，生活充满激情和活力。你们互相理解和欣赏，能够共同创造精彩的生活。", suggestions: ["避免过度竞争", "互相尊重和欣赏", "共同追求宏大目标"] },
+                    "处女座": { rate: 75, description: "处女座的细致与狮子座的自信形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["狮子座需注意细节", "处女座需欣赏对方的自信", "找到平衡点"] },
+                    "天秤座": { rate: 85, description: "天秤座的优雅与狮子座的魅力形成迷人组合。能够互相欣赏和支持，创造精彩的社交生活。", suggestions: ["共同参与社交活动", "互相欣赏和赞美", "保持生活的美感"] },
+                    "天蝎座": { rate: 70, description: "天蝎座的深度与狮子座的自信形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["狮子座需更多情感深度", "天蝎座需理解对方的自信", "建立信任"] },
+                    "射手座": { rate: 95, description: "两个火象星座的完美组合。都充满热情和冒险精神，能够一起探索世界，共同成长。", suggestions: ["保持开放的心态", "共同学习和成长", "追求共同的梦想"] },
+                    "摩羯座": { rate: 60, description: "摩羯座的务实与狮子座的张扬形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["狮子座需更多实际行动", "摩羯座需欣赏对方的魅力", "找到共同点"] },
+                    "水瓶座": { rate: 80, description: "水瓶座的创新与狮子座的自信形成有趣组合。能够互相欣赏和支持，创造精彩的生活。", suggestions: ["保持开放的思想", "互相尊重和欣赏", "共同探索新领域"] },
+                    "双鱼座": { rate: 65, description: "双鱼座的敏感与狮子座的自信形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["狮子座需更多情感表达", "双鱼座需理解对方的自信", "创造浪漫时刻"] }
+                },
+                "处女座": {
+                    "白羊座": { rate: 70, description: "白羊座的随性与处女座的完美主义形成挑战。需要更多的理解和妥协才能和谐相处。", suggestions: ["白羊座需注意细节", "处女座需放宽标准", "找到平衡点"] },
+                    "金牛座": { rate: 100, description: "这是一对完美的组合，处女座的细致与金牛座的务实相得益彰。能够共同创造稳定和美好的生活。", suggestions: ["共同规划未来", "分工合作", "保持沟通"] },
+                    "双子座": { rate: 70, description: "处女座的细致与双子座的随性形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["双子座需注意细节", "处女座需放宽标准", "找到平衡点"] },
+                    "巨蟹座": { rate: 90, description: "处女座的细致与巨蟹座的关怀形成温馨组合。能够互相支持和理解，创造美好的家庭生活。", suggestions: ["共同创造舒适的家", "分工合作", "表达情感和感激"] },
+                    "狮子座": { rate: 75, description: "处女座的细致与狮子座的自信形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["狮子座需注意细节", "处女座需欣赏对方的自信", "找到平衡点"] },
+                    "处女座": { rate: 80, description: "两个处女座在一起，生活充满秩序和效率。你们互相理解和支持，共同创造美好的生活。", suggestions: ["避免过度挑剔", "互相支持和鼓励", "找到平衡点"] },
+                    "天秤座": { rate: 75, description: "天秤座的平衡与处女座的细致形成互补。能够互相学习和支持，共同成长。", suggestions: ["保持开放的沟通", "互相学习对方的优点", "创造美感"] },
+                    "天蝎座": { rate: 85, description: "处女座的细致与天蝎座的深度形成强大组合。能够互相支持和理解，共同面对生活的挑战。", suggestions: ["建立信任和忠诚", "互相支持和鼓励", "共同面对挑战"] },
+                    "射手座": { rate: 65, description: "射手座的随性与处女座的完美主义形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["射手座需注意细节", "处女座需放宽标准", "找到平衡点"] },
+                    "摩羯座": { rate: 95, description: "处女座的细致与摩羯座的务实形成强大组合。能够互相支持和理解，共同创造成功的人生。", suggestions: ["共同制定计划", "分工合作", "互相支持事业"] },
+                    "水瓶座": { rate: 60, description: "水瓶座的创新与处女座的传统形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["水瓶座需更多实际行动", "处女座需开放思想", "找到共同点"] },
+                    "双鱼座": { rate: 80, description: "处女座的实际与双鱼座的梦想形成互补。能够互相支持和理解，共同创造美好的生活。", suggestions: ["平衡现实和梦想", "互相支持和鼓励", "表达情感和感激"] }
+                },
+                "天秤座": {
+                    "白羊座": { rate: 80, description: "天秤座的平衡与白羊座的直接形成互补。能够互相学习，共同成长。", suggestions: ["天秤座需更直接表达需求", "白羊座需更多考虑他人感受", "共同参与社交活动"] },
+                    "金牛座": { rate: 70, description: "天秤座的社交与金牛座的居家形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["平衡社交和独处时间", "共同创造美感", "互相理解"] },
+                    "双子座": { rate: 100, description: "这是一对完美的风象星座组合。都善于沟通和社交，能够建立深厚的精神连接。", suggestions: ["保持开放的沟通", "共同参与社交活动", "一起学习和成长"] },
+                    "巨蟹座": { rate: 65, description: "天秤座的社交与巨蟹座的居家形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["平衡社交和家庭时间", "共同创造美感", "互相理解"] },
+                    "狮子座": { rate: 85, description: "天秤座的优雅与狮子座的魅力形成迷人组合。能够互相欣赏和支持，创造精彩的社交生活。", suggestions: ["共同参与社交活动", "互相欣赏和赞美", "保持生活的美感"] },
+                    "处女座": { rate: 75, description: "天秤座的平衡与处女座的细致形成互补。能够互相学习和支持，共同成长。", suggestions: ["保持开放的沟通", "互相学习对方的优点", "创造美感"] },
+                    "天秤座": { rate: 80, description: "两个天秤座在一起，生活充满和谐和美感。你们互相理解和支持，共同创造美好的生活。", suggestions: ["避免优柔寡断", "保持开放的沟通", "共同创造美感"] },
+                    "天蝎座": { rate: 75, description: "天秤座的平衡与天蝎座的深度形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["保持开放的沟通", "建立信任和忠诚", "找到平衡点"] },
+                    "射手座": { rate: 90, description: "天秤座的社交与射手座的乐观形成有趣组合。能够互相欣赏和支持，创造精彩的生活。", suggestions: ["共同参与社交活动", "保持开放的心态", "一起学习和成长"] },
+                    "摩羯座": { rate: 65, description: "天秤座的社交与摩羯座的务实形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["平衡社交和工作时间", "共同创造美感", "互相理解"] },
+                    "水瓶座": { rate: 95, description: "这是一对思想和社交的完美组合。都重视和谐和创新，能够互相理解和支持。", suggestions: ["保持开放的沟通", "共同参与社交活动", "一起探索新领域"] },
+                    "双鱼座": { rate: 60, description: "天秤座的理性与双鱼座的感性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["天秤座需更多情感表达", "双鱼座需更直接沟通", "创造浪漫时刻"] }
+                },
+                "天蝎座": {
+                    "白羊座": { rate: 65, description: "这是一对充满激情但也充满挑战的组合。天蝎座的占有欲与白羊座的独立性需要找到平衡点。", suggestions: ["建立信任和透明度", "尊重彼此的边界", "共同面对挑战"] },
+                    "金牛座": { rate: 80, description: "天蝎座的深度与金牛座的稳定形成强大组合。能够建立深厚的信任和感情。", suggestions: ["建立信任和忠诚", "共同管理财务", "创造亲密时刻"] },
+                    "双子座": { rate: 60, description: "天蝎座的深度与双子座的表面形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["双子座需更多深度交流", "天蝎座需放松控制", "建立信任"] },
+                    "巨蟹座": { rate: 100, description: "这是一对情感深度和忠诚度的完美组合。都重视情感连接和家庭，能够建立深厚的感情。", suggestions: ["建立信任和忠诚", "创造亲密时刻", "共同面对挑战"] },
+                    "狮子座": { rate: 70, description: "天蝎座的深度与狮子座的自信形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["狮子座需更多情感深度", "天蝎座需理解对方的自信", "建立信任"] },
+                    "处女座": { rate: 85, description: "处女座的细致与天蝎座的深度形成强大组合。能够互相支持和理解，共同面对生活的挑战。", suggestions: ["建立信任和忠诚", "互相支持和鼓励", "共同面对挑战"] },
+                    "天秤座": { rate: 75, description: "天秤座的平衡与天蝎座的深度形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["保持开放的沟通", "建立信任和忠诚", "找到平衡点"] },
+                    "天蝎座": { rate: 80, description: "两个天蝎座在一起，情感深度和忠诚度达到极致。你们互相理解和支持，共同面对生活的挑战。", suggestions: ["避免过度占有欲", "建立信任和忠诚", "共同面对挑战"] },
+                    "射手座": { rate: 75, description: "天蝎座的深度与射手座的乐观形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["射手座需更多情感深度", "天蝎座需理解对方的自由需求", "找到平衡点"] },
+                    "摩羯座": { rate: 90, description: "天蝎座的深度与摩羯座的务实形成强大组合。能够互相支持和理解，共同创造成功的人生。", suggestions: ["共同制定计划", "建立信任和忠诚", "互相支持事业"] },
+                    "水瓶座": { rate: 70, description: "水瓶座的理性与天蝎座的感性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["水瓶座需更多情感表达", "天蝎座需理解对方的理性", "建立信任"] },
+                    "双鱼座": { rate: 95, description: "天蝎座的深度与双鱼座的感性形成完美组合。能够互相理解和支持，创造深厚的感情连接。", suggestions: ["创造亲密时刻", "表达情感和感激", "共同面对生活的挑战"] }
+                },
+                "射手座": {
+                    "白羊座": { rate: 95, description: "两个火象星座的完美匹配，充满冒险精神和乐观态度。能够一起探索世界，共同成长。", suggestions: ["保持开放的心态", "共同学习和成长", "规划未来但保持灵活性"] },
+                    "金牛座": { rate: 60, description: "射手座的自由与金牛座的稳定形成挑战。需要更多的理解和妥协才能和谐相处。", suggestions: ["射手座需更多责任感", "金牛座需增加灵活性", "找到平衡点"] },
+                    "双子座": { rate: 80, description: "两个喜欢自由和探索的星座组合。能够一起探索世界，共同成长。", suggestions: ["保持开放的心态", "共同学习和成长", "尊重彼此的独立性"] },
+                    "巨蟹座": { rate: 70, description: "射手座的自由与巨蟹座的家庭观念形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["射手座需更多家庭责任感", "巨蟹座需理解对方的自由需求", "找到平衡点"] },
+                    "狮子座": { rate: 95, description: "两个火象星座的完美组合。都充满热情和冒险精神，能够一起探索世界，共同成长。", suggestions: ["保持开放的心态", "共同学习和成长", "追求共同的梦想"] },
+                    "处女座": { rate: 65, description: "射手座的随性与处女座的完美主义形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["射手座需注意细节", "处女座需放宽标准", "找到平衡点"] },
+                    "天秤座": { rate: 90, description: "天秤座的社交与射手座的乐观形成有趣组合。能够互相欣赏和支持，创造精彩的生活。", suggestions: ["共同参与社交活动", "保持开放的心态", "一起学习和成长"] },
+                    "天蝎座": { rate: 75, description: "天蝎座的深度与射手座的乐观形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["射手座需更多情感深度", "天蝎座需理解对方的自由需求", "找到平衡点"] },
+                    "射手座": { rate: 80, description: "两个射手座在一起，生活充满自由和冒险。你们互相理解和支持，共同探索世界。", suggestions: ["保持开放的心态", "共同学习和成长", "尊重彼此的独立性"] },
+                    "摩羯座": { rate: 75, description: "射手座的自由与摩羯座的务实形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["射手座需更多责任感", "摩羯座需理解对方的自由需求", "找到平衡点"] },
+                    "水瓶座": { rate: 100, description: "这是一对自由和创新的完美组合。都重视独立和探索，能够互相理解和支持。", suggestions: ["保持开放的心态", "共同探索新领域", "尊重彼此的独立性"] },
+                    "双鱼座": { rate: 70, description: "射手座的理性与双鱼座的感性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["射手座需更多情感表达", "双鱼座需理解对方的理性", "找到平衡点"] }
+                },
+                "摩羯座": {
+                    "白羊座": { rate: 70, description: "摩羯座的务实与白羊座的冲动形成对比。需要更多的理解和妥协才能和谐相处。", suggestions: ["制定共同目标", "互相学习对方的优点", "保持耐心"] },
+                    "金牛座": { rate: 95, description: "这是一对务实和稳定的组合。都重视事业和未来，能够共同创造成功的人生。", suggestions: ["共同制定长期目标", "互相支持事业", "平衡工作和生活"] },
+                    "双子座": { rate: 65, description: "摩羯座的务实与双子座的随性形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["双子座需更多责任感", "摩羯座需增加灵活性", "找到共同点"] },
+                    "巨蟹座": { rate: 80, description: "摩羯座的稳定与巨蟹座的关怀形成可靠组合。能够互相支持和理解，共同创造稳定的家庭生活。", suggestions: ["共同规划未来", "互相支持事业和家庭", "表达情感和感激"] },
+                    "狮子座": { rate: 60, description: "摩羯座的务实与狮子座的张扬形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["狮子座需更多实际行动", "摩羯座需欣赏对方的魅力", "找到共同点"] },
+                    "处女座": { rate: 95, description: "处女座的细致与摩羯座的务实形成强大组合。能够互相支持和理解，共同创造成功的人生。", suggestions: ["共同制定计划", "分工合作", "互相支持事业"] },
+                    "天秤座": { rate: 65, description: "天秤座的社交与摩羯座的务实形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["平衡社交和工作时间", "共同创造美感", "互相理解"] },
+                    "天蝎座": { rate: 90, description: "天蝎座的深度与摩羯座的务实形成强大组合。能够互相支持和理解，共同创造成功的人生。", suggestions: ["共同制定计划", "建立信任和忠诚", "互相支持事业"] },
+                    "射手座": { rate: 75, description: "射手座的自由与摩羯座的务实形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["射手座需更多责任感", "摩羯座需理解对方的自由需求", "找到平衡点"] },
+                    "摩羯座": { rate: 80, description: "两个摩羯座在一起，生活充满务实和计划。你们互相理解和支持，共同创造成功的人生。", suggestions: ["共同制定长期目标", "平衡工作和生活", "表达情感和感激"] },
+                    "水瓶座": { rate: 75, description: "水瓶座的创新与摩羯座的传统形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["水瓶座需更多实际行动", "摩羯座需开放思想", "找到共同点"] },
+                    "双鱼座": { rate: 85, description: "摩羯座的稳定与双鱼座的感性形成互补。能够互相支持和理解，共同创造美好的生活。", suggestions: ["平衡现实和梦想", "互相支持和鼓励", "表达情感和感激"] }
+                },
+                "水瓶座": {
+                    "白羊座": { rate: 85, description: "水瓶座的创新与白羊座的行动力形成强大组合。能够一起创造新事物，共同进步。", suggestions: ["保持开放的思想", "尊重彼此的独特性", "共同探索新领域"] },
+                    "金牛座": { rate: 65, description: "水瓶座的创新与金牛座的传统形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["水瓶座需更多实际行动", "金牛座需开放思想", "找到共同点"] },
+                    "双子座": { rate: 95, description: "这是一对思想和交流的完美组合。都重视独立和创新，能够互相理解和支持。", suggestions: ["保持思想的交流", "共同探索新领域", "尊重彼此的独特性"] },
+                    "巨蟹座": { rate: 70, description: "水瓶座的理性与巨蟹座的感性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["水瓶座需更多情感表达", "巨蟹座需理解对方的理性", "找到共同点"] },
+                    "狮子座": { rate: 80, description: "水瓶座的创新与狮子座的自信形成有趣组合。能够互相欣赏和支持，创造精彩的生活。", suggestions: ["保持开放的思想", "互相尊重和欣赏", "共同探索新领域"] },
+                    "处女座": { rate: 60, description: "水瓶座的创新与处女座的传统形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["水瓶座需更多实际行动", "处女座需开放思想", "找到共同点"] },
+                    "天秤座": { rate: 95, description: "这是一对思想和社交的完美组合。都重视和谐和创新，能够互相理解和支持。", suggestions: ["保持开放的沟通", "共同参与社交活动", "一起探索新领域"] },
+                    "天蝎座": { rate: 70, description: "水瓶座的理性与天蝎座的感性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["水瓶座需更多情感表达", "天蝎座需理解对方的理性", "建立信任"] },
+                    "射手座": { rate: 100, description: "这是一对自由和创新的完美组合。都重视独立和探索，能够互相理解和支持。", suggestions: ["保持开放的心态", "共同探索新领域", "尊重彼此的独立性"] },
+                    "摩羯座": { rate: 75, description: "水瓶座的创新与摩羯座的传统形成挑战。需要更多的理解和适应才能和谐相处。", suggestions: ["水瓶座需更多实际行动", "摩羯座需开放思想", "找到共同点"] },
+                    "水瓶座": { rate: 80, description: "两个水瓶座在一起，生活充满创新和思想。你们互相理解和支持，共同探索新领域。", suggestions: ["保持开放的思想", "共同探索新领域", "尊重彼此的独立性"] },
+                    "双鱼座": { rate: 75, description: "水瓶座的理性与双鱼座的感性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["水瓶座需更多情感表达", "双鱼座需理解对方的理性", "找到平衡点"] }
+                },
+                "双鱼座": {
+                    "白羊座": { rate: 75, description: "双鱼座的敏感与白羊座的直接需要找到平衡点。能够互相补充，共同成长。", suggestions: ["白羊座需更多情感表达", "双鱼座需更直接沟通", "创造浪漫时刻"] },
+                    "金牛座": { rate: 90, description: "双鱼座的温柔与金牛座的稳重形成温馨组合。能够互相支持和理解，创造美好的生活。", suggestions: ["共同创造舒适的家", "表达情感和感激", "平衡现实和梦想"] },
+                    "双子座": { rate: 70, description: "双鱼座的感性与双子座的理性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["双子座需更多情感表达", "双鱼座需更直接沟通", "创造共同的梦想"] },
+                    "巨蟹座": { rate: 100, description: "这是一对情感深度和同理心的完美组合。都重视情感连接和家庭，能够互相理解和支持。", suggestions: ["创造浪漫时刻", "表达情感和感激", "共同面对生活的挑战"] },
+                    "狮子座": { rate: 65, description: "双鱼座的敏感与狮子座的自信形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["狮子座需更多情感表达", "双鱼座需理解对方的自信", "创造浪漫时刻"] },
+                    "处女座": { rate: 80, description: "处女座的实际与双鱼座的梦想形成互补。能够互相支持和理解，共同创造美好的生活。", suggestions: ["平衡现实和梦想", "互相支持和鼓励", "表达情感和感激"] },
+                    "天秤座": { rate: 60, description: "天秤座的理性与双鱼座的感性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["天秤座需更多情感表达", "双鱼座需更直接沟通", "创造浪漫时刻"] },
+                    "天蝎座": { rate: 95, description: "天蝎座的深度与双鱼座的感性形成完美组合。能够互相理解和支持，创造深厚的感情连接。", suggestions: ["创造亲密时刻", "表达情感和感激", "共同面对生活的挑战"] },
+                    "射手座": { rate: 70, description: "射手座的理性与双鱼座的感性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["射手座需更多情感表达", "双鱼座需理解对方的理性", "找到平衡点"] },
+                    "摩羯座": { rate: 85, description: "摩羯座的稳定与双鱼座的感性形成互补。能够互相支持和理解，共同创造美好的生活。", suggestions: ["平衡现实和梦想", "互相支持和鼓励", "表达情感和感激"] },
+                    "水瓶座": { rate: 75, description: "水瓶座的理性与双鱼座的感性形成对比。需要更多的理解和适应才能和谐相处。", suggestions: ["水瓶座需更多情感表达", "双鱼座需理解对方的理性", "找到平衡点"] },
+                    "双鱼座": { rate: 80, description: "两个双鱼座在一起，生活充满情感和梦想。你们互相理解和支持，共同创造美好的生活。", suggestions: ["表达情感和感激", "创造浪漫时刻", "平衡现实和梦想"] }
+                }
+            },
+            "friend": {
+                "白羊座": {
+                    "白羊座": { rate: 90, description: "两个白羊座的朋友组合充满活力和冒险精神。你们能够一起尝试新事物，共同面对挑战。", suggestions: ["一起参与户外活动", "互相鼓励和支持", "避免过度竞争"] },
+                    "金牛座": { rate: 60, description: "白羊座的冲动与金牛座的稳重形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "双子座": { rate: 90, description: "这是一对充满活力和变化的朋友组合。你们能够一起探索新事物，分享想法和经验。", suggestions: ["保持开放的沟通", "一起尝试新活动", "互相支持和鼓励"] },
+                    "巨蟹座": { rate: 60, description: "白羊座的直接与巨蟹座的敏感可能导致误解。需要更多的理解和适应才能成为好朋友。", suggestions: ["白羊座需更多考虑他人感受", "巨蟹座需理解对方的直率", "创造共同回忆"] },
+                    "狮子座": { rate: 100, description: "这是一对充满激情和活力的完美朋友组合。你们互相理解和支持，能够一起创造精彩的回忆。", suggestions: ["一起参与社交活动", "互相鼓励和支持", "共同追求目标"] },
+                    "处女座": { rate: 73, description: "白羊座的随性与处女座的完美主义形成挑战。需要更多的理解和适应才能成为好朋友。", suggestions: ["白羊座需注意细节", "处女座需放宽标准", "互相学习对方的优点"] },
+                    "天秤座": { rate: 75, description: "天秤座的平衡与白羊座的直接形成互补。你们能够互相学习，共同成长。", suggestions: ["保持开放的沟通", "互相理解和支持", "一起参与社交活动"] },
+                    "天蝎座": { rate: 60, description: "白羊座的直率与天蝎座的深沉形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "射手座": { rate: 100, description: "两个火象星座的完美朋友组合。你们都充满冒险精神和乐观态度，能够一起探索世界。", suggestions: ["一起旅行和探险", "分享想法和经验", "互相鼓励和支持"] },
+                    "摩羯座": { rate: 60, description: "白羊座的冲动与摩羯座的务实形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["互相学习对方的优点", "找到共同目标", "保持耐心和理解"] },
+                    "水瓶座": { rate: 90, description: "水瓶座的创新与白羊座的行动力形成强大朋友组合。你们能够一起创造新事物，共同进步。", suggestions: ["一起探索新领域", "分享想法和创意", "互相支持和鼓励"] },
+                    "双鱼座": { rate: 60, description: "白羊座的直接与双鱼座的敏感形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["白羊座需更多考虑他人感受", "双鱼座需更直接沟通", "创造共同回忆"] }
+                },
+                "金牛座": {
+                    "白羊座": { rate: 60, description: "金牛座的稳重与白羊座的冲动形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "金牛座": { rate: 75, description: "两个金牛座的朋友组合充满稳定和信任。你们能够互相理解和支持，共同面对生活的挑战。", suggestions: ["一起享受美食和艺术", "互相支持和鼓励", "创造舒适的相处环境"] },
+                    "双子座": { rate: 70, description: "金牛座的稳定与双子座的多变形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "巨蟹座": { rate: 75, description: "这是一对充满温情和稳定的朋友组合。你们都重视家庭和安全感，能够互相支持和理解。", suggestions: ["一起创造舒适的环境", "分享生活经验", "互相支持和鼓励"] },
+                    "狮子座": { rate: 60, description: "金牛座的低调与狮子座的张扬形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相欣赏和支持"] },
+                    "处女座": { rate: 95, description: "这是一对完美的朋友组合。处女座的细致与金牛座的务实相得益彰，能够互相支持和理解。", suggestions: ["一起规划和执行计划", "互相支持和鼓励", "分享生活经验"] },
+                    "天秤座": { rate: 70, description: "天秤座的社交与金牛座的居家形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["平衡社交和独处时间", "找到共同兴趣", "互相理解和支持"] },
+                    "天蝎座": { rate: 65, description: "金牛座的稳定与天蝎座的深沉形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "射手座": { rate: 75, description: "金牛座的稳定与射手座的自由形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "摩羯座": { rate: 96, description: "这是一对务实和稳定的朋友组合。你们都重视事业和未来，能够互相支持和理解。", suggestions: ["一起规划和执行计划", "互相支持事业发展", "分享生活经验"] },
+                    "水瓶座": { rate: 60, description: "金牛座的传统与水瓶座的创新形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "双鱼座": { rate: 75, description: "金牛座的稳定与双鱼座的感性形成互补。你们能够互相支持和理解，共同创造美好的回忆。", suggestions: ["一起创造舒适的环境", "分享情感和经验", "互相支持和鼓励"] }
+                },
+                "双子座": {
+                    "白羊座": { rate: 90, description: "这是一对充满活力和变化的朋友组合。你们能够一起探索新事物，分享想法和经验。", suggestions: ["保持开放的沟通", "一起尝试新活动", "互相支持和鼓励"] },
+                    "金牛座": { rate: 70, description: "双子座的多变与金牛座的稳定形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "双子座": { rate: 100, description: "两个双子座的朋友组合永远不会无聊。你们有共同的兴趣和思维方式，能够互相理解和支持。", suggestions: ["保持开放的沟通", "一起学习和成长", "分享想法和经验"] },
+                    "巨蟹座": { rate: 90, description: "双子座的理性与巨蟹座的感性形成互补。你们能够互相学习，共同成长。", suggestions: ["保持开放的沟通", "互相理解和支持", "创造共同回忆"] },
+                    "狮子座": { rate: 90, description: "狮子座的热情与双子座的机智形成有趣朋友组合。你们能够互相欣赏和支持，创造精彩的回忆。", suggestions: ["一起参与社交活动", "互相鼓励和支持", "分享想法和经验"] },
+                    "处女座": { rate: 90, description: "处女座的细致与双子座的随性形成互补。你们能够互相学习，共同成长。", suggestions: ["保持开放的沟通", "互相理解和支持", "分享想法和经验"] },
+                    "天秤座": { rate: 95, description: "这是一对完美的风象星座朋友组合。你们都善于沟通和社交，能够建立深厚的友谊。", suggestions: ["保持开放的沟通", "一起参与社交活动", "互相支持和鼓励"] },
+                    "天蝎座": { rate: 60, description: "双子座的表面与天蝎座的深度形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "射手座": { rate: 90, description: "两个喜欢自由和探索的星座朋友组合。你们能够一起探索世界，共同成长。", suggestions: ["保持开放的心态", "一起学习和成长", "分享想法和经验"] },
+                    "摩羯座": { rate: 65, description: "双子座的随性与摩羯座的务实形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["互相学习对方的优点", "找到共同目标", "保持耐心和理解"] },
+                    "水瓶座": { rate: 90, description: "这是一对思想和交流的完美朋友组合。你们都重视独立和创新，能够互相理解和支持。", suggestions: ["保持思想的交流", "一起探索新领域", "互相支持和鼓励"] },
+                    "双鱼座": { rate: 65, description: "双子座的理性与双鱼座的感性形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["保持开放的沟通", "互相理解和支持", "创造共同回忆"] }
+                },
+                "巨蟹座": {
+                    "白羊座": { rate: 60, description: "巨蟹座的敏感与白羊座的直接可能导致误解。需要更多的理解和适应才能成为好朋友。", suggestions: ["巨蟹座需理解对方的直率", "白羊座需更多考虑他人感受", "创造共同回忆"] },
+                    "金牛座": { rate: 75, description: "这是一对充满温情和稳定的朋友组合。你们都重视家庭和安全感，能够互相支持和理解。", suggestions: ["一起创造舒适的环境", "分享生活经验", "互相支持和鼓励"] },
+                    "双子座": { rate: 90, description: "巨蟹座的感性与双子座的理性形成互补。你们能够互相学习，共同成长。", suggestions: ["保持开放的沟通", "互相理解和支持", "创造共同回忆"] },
+                    "巨蟹座": { rate: 70, description: "两个巨蟹座的朋友组合充满温情和理解。你们能够互相支持和鼓励，共同面对生活的挑战。", suggestions: ["创造共同回忆", "分享情感和经验", "互相支持和鼓励"] },
+                    "狮子座": { rate: 60, description: "巨蟹座的敏感与狮子座的自信形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["互相理解和支持", "尊重彼此的差异", "找到共同兴趣"] },
+                    "处女座": { rate: 95, description: "处女座的细致与巨蟹座的关怀形成温馨朋友组合。你们能够互相支持和理解，共同面对生活的挑战。", suggestions: ["一起创造舒适的环境", "互相支持和鼓励", "分享生活经验"] },
+                    "天秤座": { rate: 75, description: "天秤座的社交与巨蟹座的居家形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["平衡社交和独处时间", "找到共同兴趣", "互相理解和支持"] },
+                    "天蝎座": { rate: 90, description: "这是一对情感深度和理解的朋友组合。你们能够互相支持和鼓励，共同面对生活的挑战。", suggestions: ["建立信任和理解", "分享情感和经验", "互相支持和鼓励"] },
+                    "射手座": { rate: 75, description: "巨蟹座的居家与射手座的自由形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相理解和支持"] },
+                    "摩羯座": { rate: 80, description: "摩羯座的稳定与巨蟹座的关怀形成可靠朋友组合。你们能够互相支持和理解，共同面对生活的挑战。", suggestions: ["互相支持和鼓励", "分享生活经验", "一起规划未来"] },
+                    "水瓶座": { rate: 80, description: "水瓶座的理性与巨蟹座的感性形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["保持开放的沟通", "互相理解和支持", "找到共同兴趣"] },
+                    "双鱼座": { rate: 90, description: "这是一对情感深度和同理心的朋友组合。你们能够互相理解和支持，共同面对生活的挑战。", suggestions: ["分享情感和经验", "互相支持和鼓励", "创造共同回忆"] }
+                },
+                "狮子座": {
+                    "白羊座": { rate: 100, description: "这是一对充满激情和活力的完美朋友组合。你们互相理解和支持，能够一起创造精彩的回忆。", suggestions: ["一起参与社交活动", "互相鼓励和支持", "共同追求目标"] },
+                    "金牛座": { rate: 60, description: "狮子座的张扬与金牛座的低调形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相欣赏和支持"] },
+                    "双子座": { rate: 90, description: "狮子座的热情与双子座的机智形成有趣朋友组合。你们能够互相欣赏和支持，创造精彩的回忆。", suggestions: ["一起参与社交活动", "互相鼓励和支持", "分享想法和经验"] },
+                    "巨蟹座": { rate: 60, description: "狮子座的自信与巨蟹座的敏感形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["互相理解和支持", "尊重彼此的差异", "找到共同兴趣"] },
+                    "狮子座": { rate: 70, description: "两个狮子座的朋友组合充满激情和活力。你们能够互相理解和支持，共同创造精彩的回忆。", suggestions: ["避免过度竞争", "互相鼓励和支持", "共同追求目标"] },
+                    "处女座": { rate: 78, description: "狮子座的自信与处女座的细致形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["互相理解和支持", "尊重彼此的差异", "找到共同兴趣"] },
+                    "天秤座": { rate: 70, description: "天秤座的优雅与狮子座的魅力形成迷人朋友组合。你们能够互相欣赏和支持，创造精彩的社交生活。", suggestions: ["一起参与社交活动", "互相鼓励和支持", "分享想法和经验"] },
+                    "天蝎座": { rate: 60, description: "狮子座的自信与天蝎座的深沉形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "射手座": { rate: 90, description: "两个火象星座的朋友组合。你们都充满热情和冒险精神，能够一起探索世界。", suggestions: ["一起旅行和探险", "互相鼓励和支持", "分享想法和经验"] },
+                    "摩羯座": { rate: 63, description: "狮子座的张扬与摩羯座的务实形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["互相理解和支持", "尊重彼此的差异", "找到共同兴趣"] },
+                    "水瓶座": { rate: 80, description: "水瓶座的创新与狮子座的自信形成有趣朋友组合。你们能够互相欣赏和支持，创造精彩的回忆。", suggestions: ["一起探索新领域", "互相鼓励和支持", "分享想法和经验"] },
+                    "双鱼座": { rate: 60, description: "狮子座的自信与双鱼座的敏感形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["互相理解和支持", "尊重彼此的差异", "找到共同兴趣"] }
+                },
+                "处女座": {
+                    "白羊座": { rate: 73, description: "处女座的细致与白羊座的随性形成挑战。需要更多的理解和适应才能成为好朋友。", suggestions: ["处女座需放宽标准", "白羊座需注意细节", "互相学习对方的优点"] },
+                    "金牛座": { rate: 95, description: "这是一对完美的朋友组合。处女座的细致与金牛座的务实相得益彰，能够互相支持和理解。", suggestions: ["一起规划和执行计划", "互相支持和鼓励", "分享生活经验"] },
+                    "双子座": { rate: 90, description: "处女座的细致与双子座的随性形成互补。你们能够互相学习，共同成长。", suggestions: ["保持开放的沟通", "互相理解和支持", "分享想法和经验"] },
+                    "巨蟹座": { rate: 95, description: "处女座的细致与巨蟹座的关怀形成温馨朋友组合。你们能够互相支持和理解，共同面对生活的挑战。", suggestions: ["一起创造舒适的环境", "互相支持和鼓励", "分享生活经验"] },
+                    "狮子座": { rate: 78, description: "处女座的细致与狮子座的自信形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["互相理解和支持", "尊重彼此的差异", "找到共同兴趣"] },
+                    "处女座": { rate: 85, description: "两个处女座的朋友组合充满细致和关怀。你们能够互相支持和理解，共同面对生活的挑战。", suggestions: ["避免过度挑剔", "互相支持和鼓励", "分享生活经验"] },
+                    "天秤座": { rate: 90, description: "天秤座的平衡与处女座的细致形成互补。你们能够互相学习，共同成长。", suggestions: ["保持开放的沟通", "互相理解和支持", "分享想法和经验"] },
+                    "天蝎座": { rate: 60, description: "处女座的细致与天蝎座的深沉形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "射手座": { rate: 65, description: "处女座的细致与射手座的随性形成挑战。需要更多的理解和适应才能成为好朋友。", suggestions: ["处女座需放宽标准", "射手座需注意细节", "互相学习对方的优点"] },
+                    "摩羯座": { rate: 75, description: "处女座的细致与摩羯座的务实形成强大朋友组合。你们能够互相支持和理解，共同创造成功的人生。", suggestions: ["一起规划和执行计划", "互相支持和鼓励", "分享生活经验"] },
+                    "水瓶座": { rate: 60, description: "处女座的传统与水瓶座的创新形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "双鱼座": { rate: 80, description: "处女座的实际与双鱼座的梦想形成互补。你们能够互相支持和理解，共同创造美好的回忆。", suggestions: ["平衡现实和梦想", "互相支持和鼓励", "分享生活经验"] }
+                },
+                "天秤座": {
+                    "白羊座": { rate: 75, description: "天秤座的平衡与白羊座的直接形成互补。你们能够互相学习，共同成长。", suggestions: ["保持开放的沟通", "互相理解和支持", "一起参与社交活动"] },
+                    "金牛座": { rate: 70, description: "天秤座的社交与金牛座的居家形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["平衡社交和独处时间", "找到共同兴趣", "互相理解和支持"] },
+                    "双子座": { rate: 95, description: "这是一对完美的风象星座朋友组合。你们都善于沟通和社交，能够建立深厚的友谊。", suggestions: ["保持开放的沟通", "一起参与社交活动", "互相支持和鼓励"] },
+                    "巨蟹座": { rate: 75, description: "天秤座的社交与巨蟹座的居家形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["平衡社交和家庭时间", "找到共同兴趣", "互相理解和支持"] },
+                    "狮子座": { rate: 70, description: "天秤座的优雅与狮子座的魅力形成迷人朋友组合。你们能够互相欣赏和支持，创造精彩的社交生活。", suggestions: ["一起参与社交活动", "互相鼓励和支持", "分享想法和经验"] },
+                    "处女座": { rate: 90, description: "天秤座的平衡与处女座的细致形成互补。你们能够互相学习，共同成长。", suggestions: ["保持开放的沟通", "互相理解和支持", "分享想法和经验"] },
+                    "天秤座": { rate: 75, description: "两个天秤座的朋友组合充满和谐和美感。你们能够互相理解和支持，共同创造美好的回忆。", suggestions: ["避免优柔寡断", "保持开放的沟通", "一起参与社交活动"] },
+                    "天蝎座": { rate: 60, description: "天秤座的平衡与天蝎座的深度形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "射手座": { rate: 100, description: "天秤座的社交与射手座的乐观形成完美朋友组合。你们能够互相欣赏和支持，创造精彩的回忆。", suggestions: ["一起参与社交活动", "保持开放的心态", "互相支持和鼓励"] },
+                    "摩羯座": { rate: 65, description: "天秤座的社交与摩羯座的务实形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["平衡社交和工作时间", "找到共同兴趣", "互相理解和支持"] },
+                    "水瓶座": { rate: 90, description: "这是一对思想和社交的完美朋友组合。你们都重视和谐和创新，能够互相理解和支持。", suggestions: ["保持开放的沟通", "一起参与社交活动", "互相支持和鼓励"] },
+                    "双鱼座": { rate: 60, description: "天秤座的理性与双鱼座的感性形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["保持开放的沟通", "互相理解和支持", "创造共同回忆"] }
+                },
+                "天蝎座": {
+                    "白羊座": { rate: 60, description: "天蝎座的深沉与白羊座的直率形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "金牛座": { rate: 65, description: "天蝎座的深沉与金牛座的稳定形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "双子座": { rate: 60, description: "天蝎座的深度与双子座的表面形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "巨蟹座": { rate: 90, description: "这是一对情感深度和理解的朋友组合。你们能够互相支持和鼓励，共同面对生活的挑战。", suggestions: ["建立信任和理解", "分享情感和经验", "互相支持和鼓励"] },
+                    "狮子座": { rate: 60, description: "天蝎座的深沉与狮子座的自信形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "处女座": { rate: 60, description: "天蝎座的深沉与处女座的细致形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "天秤座": { rate: 60, description: "天蝎座的深度与天秤座的平衡形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "天蝎座": { rate: 60, description: "两个天蝎座的朋友组合充满深度和理解。你们能够互相支持和鼓励，共同面对生活的挑战。", suggestions: ["建立信任和理解", "分享情感和经验", "互相支持和鼓励"] },
+                    "射手座": { rate: 64, description: "天蝎座的深沉与射手座的乐观形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "摩羯座": { rate: 80, description: "天蝎座的深度与摩羯座的务实形成强大朋友组合。你们能够互相支持和理解，共同创造成功的人生。", suggestions: ["一起规划和执行计划", "互相支持和鼓励", "分享生活经验"] },
+                    "水瓶座": { rate: 65, description: "天蝎座的深沉与水瓶座的理性形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "双鱼座": { rate: 90, description: "天蝎座的深度与双鱼座的感性形成完美朋友组合。你们能够互相理解和支持，创造深厚的友谊。", suggestions: ["分享情感和经验", "互相支持和鼓励", "创造共同回忆"] }
+                },
+                "射手座": {
+                    "白羊座": { rate: 100, description: "两个火象星座的完美朋友组合。你们都充满冒险精神和乐观态度，能够一起探索世界。", suggestions: ["一起旅行和探险", "分享想法和经验", "互相鼓励和支持"] },
+                    "金牛座": { rate: 75, description: "射手座的自由与金牛座的稳定形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "双子座": { rate: 90, description: "两个喜欢自由和探索的星座朋友组合。你们能够一起探索世界，共同成长。", suggestions: ["保持开放的心态", "一起学习和成长", "分享想法和经验"] },
+                    "巨蟹座": { rate: 75, description: "射手座的自由与巨蟹座的居家形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相理解和支持"] },
+                    "狮子座": { rate: 90, description: "两个火象星座的朋友组合。你们都充满热情和冒险精神，能够一起探索世界。", suggestions: ["一起旅行和探险", "互相鼓励和支持", "分享想法和经验"] },
+                    "处女座": { rate: 65, description: "射手座的随性与处女座的完美主义形成挑战。需要更多的理解和适应才能成为好朋友。", suggestions: ["射手座需注意细节", "处女座需放宽标准", "互相学习对方的优点"] },
+                    "天秤座": { rate: 100, description: "天秤座的社交与射手座的乐观形成完美朋友组合。你们能够互相欣赏和支持，创造精彩的回忆。", suggestions: ["一起参与社交活动", "保持开放的心态", "互相支持和鼓励"] },
+                    "天蝎座": { rate: 64, description: "射手座的乐观与天蝎座的深沉形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "射手座": { rate: 90, description: "两个射手座的朋友组合充满自由和冒险。你们能够一起探索世界，共同成长。", suggestions: ["一起旅行和探险", "分享想法和经验", "互相鼓励和支持"] },
+                    "摩羯座": { rate: 75, description: "射手座的自由与摩羯座的务实形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "水瓶座": { rate: 95, description: "这是一对自由和创新的朋友组合。你们都重视独立和探索，能够互相理解和支持。", suggestions: ["保持开放的心态", "一起探索新领域", "分享想法和经验"] },
+                    "双鱼座": { rate: 70, description: "射手座的理性与双鱼座的感性形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["保持开放的沟通", "互相理解和支持", "创造共同回忆"] }
+                },
+                "摩羯座": {
+                    "白羊座": { rate: 60, description: "摩羯座的务实与白羊座的冲动形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["互相学习对方的优点", "找到共同目标", "保持耐心和理解"] },
+                    "金牛座": { rate: 96, description: "这是一对务实和稳定的朋友组合。你们都重视事业和未来，能够互相支持和理解。", suggestions: ["一起规划和执行计划", "互相支持事业发展", "分享生活经验"] },
+                    "双子座": { rate: 65, description: "摩羯座的务实与双子座的随性形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["互相学习对方的优点", "找到共同目标", "保持耐心和理解"] },
+                    "巨蟹座": { rate: 80, description: "摩羯座的稳定与巨蟹座的关怀形成可靠朋友组合。你们能够互相支持和理解，共同面对生活的挑战。", suggestions: ["互相支持和鼓励", "分享生活经验", "一起规划未来"] },
+                    "狮子座": { rate: 63, description: "摩羯座的务实与狮子座的张扬形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["互相理解和支持", "尊重彼此的差异", "找到共同兴趣"] },
+                    "处女座": { rate: 75, description: "处女座的细致与摩羯座的务实形成强大朋友组合。你们能够互相支持和理解，共同创造成功的人生。", suggestions: ["一起规划和执行计划", "互相支持和鼓励", "分享生活经验"] },
+                    "天秤座": { rate: 65, description: "摩羯座的务实与天秤座的社交形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["平衡社交和工作时间", "找到共同兴趣", "互相理解和支持"] },
+                    "天蝎座": { rate: 80, description: "天蝎座的深度与摩羯座的务实形成强大朋友组合。你们能够互相支持和理解，共同创造成功的人生。", suggestions: ["一起规划和执行计划", "互相支持和鼓励", "分享生活经验"] },
+                    "射手座": { rate: 75, description: "摩羯座的务实与射手座的自由形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "摩羯座": { rate: 70, description: "两个摩羯座的朋友组合充满务实和计划。你们能够互相支持和理解，共同创造成功的人生。", suggestions: ["一起规划和执行计划", "互相支持和鼓励", "分享生活经验"] },
+                    "水瓶座": { rate: 75, description: "摩羯座的传统与水瓶座的创新形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "双鱼座": { rate: 90, description: "摩羯座的稳定与双鱼座的感性形成互补。你们能够互相支持和理解，共同创造美好的回忆。", suggestions: ["平衡现实和梦想", "互相支持和鼓励", "分享生活经验"] }
+                },
+                "水瓶座": {
+                    "白羊座": { rate: 90, description: "水瓶座的创新与白羊座的行动力形成强大朋友组合。你们能够一起创造新事物，共同进步。", suggestions: ["一起探索新领域", "分享想法和创意", "互相支持和鼓励"] },
+                    "金牛座": { rate: 60, description: "水瓶座的创新与金牛座的传统形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "双子座": { rate: 90, description: "这是一对思想和交流的完美朋友组合。你们都重视独立和创新，能够互相理解和支持。", suggestions: ["保持思想的交流", "一起探索新领域", "互相支持和鼓励"] },
+                    "巨蟹座": { rate: 80, description: "水瓶座的理性与巨蟹座的感性形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["保持开放的沟通", "互相理解和支持", "找到共同兴趣"] },
+                    "狮子座": { rate: 80, description: "水瓶座的创新与狮子座的自信形成有趣朋友组合。你们能够互相欣赏和支持，创造精彩的回忆。", suggestions: ["一起探索新领域", "互相鼓励和支持", "分享想法和经验"] },
+                    "处女座": { rate: 60, description: "水瓶座的创新与处女座的传统形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "天秤座": { rate: 90, description: "这是一对思想和社交的完美朋友组合。你们都重视和谐和创新，能够互相理解和支持。", suggestions: ["保持开放的沟通", "一起参与社交活动", "互相支持和鼓励"] },
+                    "天蝎座": { rate: 65, description: "水瓶座的理性与天蝎座的感性形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["建立信任和理解", "尊重彼此的差异", "互相支持和鼓励"] },
+                    "射手座": { rate: 95, description: "这是一对自由和创新的朋友组合。你们都重视独立和探索，能够互相理解和支持。", suggestions: ["保持开放的心态", "一起探索新领域", "分享想法和经验"] },
+                    "摩羯座": { rate: 75, description: "水瓶座的创新与摩羯座的传统形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["尊重彼此的差异", "找到共同兴趣", "互相学习对方的优点"] },
+                    "水瓶座": { rate: 90, description: "两个水瓶座的朋友组合充满创新和思想。你们能够互相理解和支持，共同探索新领域。", suggestions: ["保持开放的思想", "一起探索新领域", "互相支持和鼓励"] },
+                    "双鱼座": { rate: 75, description: "水瓶座的理性与双鱼座的感性形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["保持开放的沟通", "互相理解和支持", "创造共同回忆"] }
+                },
+                "双鱼座": {
+                    "白羊座": { rate: 60, description: "双鱼座的敏感与白羊座的直接形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["双鱼座需更直接沟通", "白羊座需更多考虑他人感受", "创造共同回忆"] },
+                    "金牛座": { rate: 75, description: "双鱼座的温柔与金牛座的稳重形成温馨朋友组合。你们能够互相支持和理解，创造美好的回忆。", suggestions: ["一起创造舒适的环境", "分享情感和经验", "互相支持和鼓励"] },
+                    "双子座": { rate: 65, description: "双鱼座的感性与双子座的理性形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["保持开放的沟通", "互相理解和支持", "创造共同回忆"] },
+                    "巨蟹座": { rate: 90, description: "这是一对情感深度和同理心的朋友组合。你们能够互相理解和支持，共同面对生活的挑战。", suggestions: ["分享情感和经验", "互相支持和鼓励", "创造共同回忆"] },
+                    "狮子座": { rate: 60, description: "双鱼座的敏感与狮子座的自信形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["互相理解和支持", "尊重彼此的差异", "找到共同兴趣"] },
+                    "处女座": { rate: 80, description: "处女座的实际与双鱼座的梦想形成互补。你们能够互相支持和理解，共同创造美好的回忆。", suggestions: ["平衡现实和梦想", "互相支持和鼓励", "分享生活经验"] },
+                    "天秤座": { rate: 60, description: "双鱼座的感性与天秤座的理性形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["保持开放的沟通", "互相理解和支持", "创造共同回忆"] },
+                    "天蝎座": { rate: 90, description: "天蝎座的深度与双鱼座的感性形成完美朋友组合。你们能够互相理解和支持，创造深厚的友谊。", suggestions: ["分享情感和经验", "互相支持和鼓励", "创造共同回忆"] },
+                    "射手座": { rate: 70, description: "双鱼座的感性与射手座的理性形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["保持开放的沟通", "互相理解和支持", "创造共同回忆"] },
+                    "摩羯座": { rate: 90, description: "摩羯座的稳定与双鱼座的感性形成互补。你们能够互相支持和理解，共同创造美好的回忆。", suggestions: ["平衡现实和梦想", "互相支持和鼓励", "分享生活经验"] },
+                    "水瓶座": { rate: 75, description: "水瓶座的理性与双鱼座的感性形成对比。需要更多的理解和适应才能成为好朋友。", suggestions: ["保持开放的沟通", "互相理解和支持", "创造共同回忆"] },
+                    "双鱼座": { rate: 90, description: "两个双鱼座的朋友组合充满情感和理解。你们能够互相支持和鼓励，共同面对生活的挑战。", suggestions: ["分享情感和经验", "互相支持和鼓励", "创造共同回忆"] }
+                }
+            },
+            "colleague": {
+                "白羊座": {
+                    "白羊座": { rate: 70, description: "两个白羊座的同事充满活力和行动力，但可能因意见不合而产生冲突。", suggestions: ["明确分工和责任", "避免过度竞争", "保持开放的沟通"] },
+                    "金牛座": { rate: 70, description: "白羊座的冲动与金牛座的稳重形成互补。你们能够互相学习，共同完成工作任务。", suggestions: ["白羊座需更多考虑实际", "金牛座需增加灵活性", "找到平衡点"] },
+                    "双子座": { rate: 80, description: "这是一对充满活力和创意的同事组合。你们能够一起提出新想法，高效完成工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "巨蟹座": { rate: 65, description: "白羊座的直接与巨蟹座的敏感可能导致工作中的误解。需要更多的理解和适应才能和谐共事。", suggestions: ["保持专业的沟通", "互相理解和支持", "明确工作目标"] },
+                    "狮子座": { rate: 85, description: "这是一对充满自信和领导力的同事组合。你们能够互相支持和鼓励，共同完成重要的工作任务。", suggestions: ["明确分工和责任", "避免过度竞争", "互相尊重和支持"] },
+                    "处女座": { rate: 75, description: "白羊座的行动力与处女座的细致形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["白羊座需注意细节", "处女座需提高行动力", "互相支持和鼓励"] },
+                    "天秤座": { rate: 70, description: "天秤座的协调能力与白羊座的行动力形成互补。你们能够共同完成需要团队合作的工作任务。", suggestions: ["保持开放的沟通", "明确分工和责任", "互相支持和鼓励"] },
+                    "天蝎座": { rate: 65, description: "白羊座的直接与天蝎座的深沉可能导致工作中的误解。需要更多的理解和适应才能和谐共事。", suggestions: ["保持专业的沟通", "明确工作目标", "互相理解和支持"] },
+                    "射手座": { rate: 90, description: "两个火象星座的同事组合充满活力和创意。你们能够一起提出新想法，高效完成工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "摩羯座": { rate: 75, description: "白羊座的行动力与摩羯座的务实形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["明确工作目标", "分工合作", "互相支持和鼓励"] },
+                    "水瓶座": { rate: 85, description: "水瓶座的创新与白羊座的行动力形成强大同事组合。你们能够一起提出新想法，高效完成工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "双鱼座": { rate: 60, description: "白羊座的直接与双鱼座的敏感可能导致工作中的误解。需要更多的理解和适应才能和谐共事。", suggestions: ["保持专业的沟通", "明确工作目标", "互相理解和支持"] }
+                },
+                "金牛座": {
+                    "白羊座": { rate: 70, description: "金牛座的稳重与白羊座的冲动形成互补。你们能够互相学习，共同完成工作任务。", suggestions: ["金牛座需增加灵活性", "白羊座需更多考虑实际", "找到平衡点"] },
+                    "金牛座": { rate: 75, description: "两个金牛座的同事组合充满稳定和可靠性。你们能够按部就班地完成工作任务，注重质量和细节。", suggestions: ["明确分工和责任", "互相支持和鼓励", "保持开放的沟通"] },
+                    "双子座": { rate: 65, description: "金牛座的稳定与双子座的多变形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["明确工作目标", "保持开放的沟通", "互相理解和支持"] },
+                    "巨蟹座": { rate: 80, description: "这是一对充满关怀和稳定的同事组合。你们能够互相支持和理解，共同创造和谐的工作环境。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "狮子座": { rate: 65, description: "金牛座的低调与狮子座的张扬形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["互相尊重和理解", "明确分工和责任", "保持专业的沟通"] },
+                    "处女座": { rate: 90, description: "这是一对注重细节和质量的同事组合。你们能够共同完成需要细致和耐心的工作任务。", suggestions: ["分工合作", "互相支持和鼓励", "保持开放的沟通"] },
+                    "天秤座": { rate: 75, description: "天秤座的协调能力与金牛座的稳重形成互补。你们能够共同完成需要团队合作的工作任务。", suggestions: ["保持开放的沟通", "明确分工和责任", "互相支持和鼓励"] },
+                    "天蝎座": { rate: 75, description: "天蝎座的深度与金牛座的稳定形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "明确工作目标", "互相支持和鼓励"] },
+                    "射手座": { rate: 60, description: "金牛座的稳定与射手座的自由形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["明确工作目标", "保持开放的沟通", "互相理解和支持"] },
+                    "摩羯座": { rate: 95, description: "这是一对务实和稳定的同事组合。你们都重视事业和未来，能够共同创造成功的工作成果。", suggestions: ["共同制定工作计划", "分工合作", "互相支持和鼓励"] },
+                    "水瓶座": { rate: 65, description: "水瓶座的创新与金牛座的传统形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "双鱼座": { rate: 85, description: "双鱼座的直觉与金牛座的稳重形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] }
+                },
+                "双子座": {
+                    "白羊座": { rate: 80, description: "这是一对充满活力和创意的同事组合。你们能够一起提出新想法，高效完成工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "金牛座": { rate: 65, description: "双子座的多变与金牛座的稳定形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["明确工作目标", "保持开放的沟通", "互相理解和支持"] },
+                    "双子座": { rate: 75, description: "两个双子座的同事组合充满创意和灵活性。你们能够快速适应变化，提出新想法和解决方案。", suggestions: ["保持开放的沟通", "明确分工和责任", "避免分散注意力"] },
+                    "巨蟹座": { rate: 75, description: "双子座的理性与巨蟹座的感性形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "狮子座": { rate: 80, description: "狮子座的领导力与双子座的创意形成互补。你们能够共同完成需要创新和执行力的工作任务。", suggestions: ["明确分工和责任", "互相支持和鼓励", "保持开放的沟通"] },
+                    "处女座": { rate: 80, description: "处女座的细致与双子座的创意形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "天秤座": { rate: 90, description: "这是一对善于沟通和协调的同事组合。你们能够共同完成需要团队合作和沟通的工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "天蝎座": { rate: 65, description: "双子座的表面与天蝎座的深度形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["保持专业的沟通", "明确工作目标", "互相理解和支持"] },
+                    "射手座": { rate: 85, description: "两个喜欢自由和创新的星座同事组合。你们能够一起提出新想法，高效完成工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "摩羯座": { rate: 70, description: "双子座的灵活与摩羯座的务实形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["明确工作目标", "保持开放的沟通", "互相理解和支持"] },
+                    "水瓶座": { rate: 95, description: "这是一对充满创意和创新的同事组合。你们能够一起提出新想法，高效完成工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "双鱼座": { rate: 70, description: "双子座的理性与双鱼座的感性形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] }
+                },
+                "巨蟹座": {
+                    "白羊座": { rate: 65, description: "巨蟹座的敏感与白羊座的直接可能导致工作中的误解。需要更多的理解和适应才能和谐共事。", suggestions: ["保持专业的沟通", "互相理解和支持", "明确工作目标"] },
+                    "金牛座": { rate: 80, description: "这是一对充满关怀和稳定的同事组合。你们能够互相支持和理解，共同创造和谐的工作环境。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "双子座": { rate: 75, description: "巨蟹座的感性与双子座的理性形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "巨蟹座": { rate: 70, description: "两个巨蟹座的同事组合充满关怀和理解。你们能够互相支持和鼓励，共同创造和谐的工作环境。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "狮子座": { rate: 70, description: "巨蟹座的关怀与狮子座的领导力形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确分工和责任"] },
+                    "处女座": { rate: 85, description: "处女座的细致与巨蟹座的关怀形成温馨同事组合。你们能够互相支持和理解，共同创造和谐的工作环境。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "分工合作"] },
+                    "天秤座": { rate: 75, description: "天秤座的协调能力与巨蟹座的关怀形成互补。你们能够共同创造和谐的工作环境，完成需要团队合作的工作任务。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "天蝎座": { rate: 85, description: "这是一对情感深度和理解的同事组合。你们能够互相支持和鼓励，共同面对工作中的挑战。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "射手座": { rate: 70, description: "巨蟹座的关怀与射手座的乐观形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "摩羯座": { rate: 80, description: "摩羯座的稳定与巨蟹座的关怀形成可靠同事组合。你们能够互相支持和理解，共同完成工作任务。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "水瓶座": { rate: 70, description: "水瓶座的理性与巨蟹座的感性形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "双鱼座": { rate: 90, description: "这是一对情感深度和同理心的同事组合。你们能够互相理解和支持，共同创造和谐的工作环境。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] }
+                },
+                "狮子座": {
+                    "白羊座": { rate: 85, description: "这是一对充满自信和领导力的同事组合。你们能够互相支持和鼓励，共同完成重要的工作任务。", suggestions: ["明确分工和责任", "避免过度竞争", "互相尊重和支持"] },
+                    "金牛座": { rate: 65, description: "狮子座的张扬与金牛座的低调形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["互相尊重和理解", "明确分工和责任", "保持专业的沟通"] },
+                    "双子座": { rate: 80, description: "狮子座的领导力与双子座的创意形成互补。你们能够共同完成需要创新和执行力的工作任务。", suggestions: ["明确分工和责任", "互相支持和鼓励", "保持开放的沟通"] },
+                    "巨蟹座": { rate: 70, description: "狮子座的领导力与巨蟹座的关怀形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确分工和责任"] },
+                    "狮子座": { rate: 65, description: "两个狮子座的同事组合充满自信和领导力，但可能因意见不合而产生冲突。", suggestions: ["明确分工和责任", "避免过度竞争", "互相尊重和支持"] },
+                    "处女座": { rate: 75, description: "狮子座的领导力与处女座的细致形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "天秤座": { rate: 80, description: "天秤座的协调能力与狮子座的领导力形成互补。你们能够共同完成需要团队合作和领导力的工作任务。", suggestions: ["保持开放的沟通", "明确分工和责任", "互相支持和鼓励"] },
+                    "天蝎座": { rate: 70, description: "狮子座的自信与天蝎座的深沉形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["保持专业的沟通", "明确工作目标", "互相理解和支持"] },
+                    "射手座": { rate: 85, description: "两个火象星座的同事组合充满热情和领导力。你们能够互相支持和鼓励，共同完成重要的工作任务。", suggestions: ["明确分工和责任", "互相支持和鼓励", "保持开放的沟通"] },
+                    "摩羯座": { rate: 65, description: "狮子座的张扬与摩羯座的务实形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["互相尊重和理解", "明确分工和责任", "保持专业的沟通"] },
+                    "水瓶座": { rate: 80, description: "水瓶座的创新与狮子座的领导力形成互补。你们能够共同完成需要创新和执行力的工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "双鱼座": { rate: 65, description: "狮子座的自信与双鱼座的敏感形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["保持专业的沟通", "明确工作目标", "互相理解和支持"] }
+                },
+                "处女座": {
+                    "白羊座": { rate: 75, description: "处女座的细致与白羊座的行动力形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["白羊座需注意细节", "处女座需提高行动力", "互相支持和鼓励"] },
+                    "金牛座": { rate: 90, description: "这是一对注重细节和质量的同事组合。你们能够共同完成需要细致和耐心的工作任务。", suggestions: ["分工合作", "互相支持和鼓励", "保持开放的沟通"] },
+                    "双子座": { rate: 80, description: "处女座的细致与双子座的创意形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "巨蟹座": { rate: 85, description: "处女座的细致与巨蟹座的关怀形成温馨同事组合。你们能够互相支持和理解，共同创造和谐的工作环境。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "分工合作"] },
+                    "狮子座": { rate: 75, description: "处女座的细致与狮子座的领导力形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "处女座": { rate: 80, description: "两个处女座的同事组合充满细致和效率。你们能够共同完成需要细致和耐心的工作任务，注重质量和细节。", suggestions: ["避免过度挑剔", "互相支持和鼓励", "保持开放的沟通"] },
+                    "天秤座": { rate: 80, description: "天秤座的协调能力与处女座的细致形成互补。你们能够共同完成需要团队合作和细致的工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "天蝎座": { rate: 80, description: "处女座的细致与天蝎座的深度形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "射手座": { rate: 70, description: "处女座的细致与射手座的随性形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "摩羯座": { rate: 90, description: "处女座的细致与摩羯座的务实形成强大同事组合。你们能够共同完成需要细致和务实的工作任务，注重质量和效率。", suggestions: ["共同制定工作计划", "分工合作", "互相支持和鼓励"] },
+                    "水瓶座": { rate: 70, description: "处女座的传统与水瓶座的创新形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "双鱼座": { rate: 85, description: "处女座的实际与双鱼座的直觉形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] }
+                },
+                "天秤座": {
+                    "白羊座": { rate: 70, description: "天秤座的协调能力与白羊座的行动力形成互补。你们能够共同完成需要团队合作的工作任务。", suggestions: ["保持开放的沟通", "明确分工和责任", "互相支持和鼓励"] },
+                    "金牛座": { rate: 75, description: "天秤座的协调能力与金牛座的稳重形成互补。你们能够共同完成需要团队合作的工作任务。", suggestions: ["保持开放的沟通", "明确分工和责任", "互相支持和鼓励"] },
+                    "双子座": { rate: 90, description: "这是一对善于沟通和协调的同事组合。你们能够共同完成需要团队合作和沟通的工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "巨蟹座": { rate: 75, description: "天秤座的协调能力与巨蟹座的关怀形成互补。你们能够共同创造和谐的工作环境，完成需要团队合作的工作任务。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "狮子座": { rate: 80, description: "天秤座的协调能力与狮子座的领导力形成互补。你们能够共同完成需要团队合作和领导力的工作任务。", suggestions: ["保持开放的沟通", "明确分工和责任", "互相支持和鼓励"] },
+                    "处女座": { rate: 80, description: "天秤座的协调能力与处女座的细致形成互补。你们能够共同完成需要团队合作和细致的工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "天秤座": { rate: 75, description: "两个天秤座的同事组合充满和谐和协调能力。你们能够共同完成需要团队合作和沟通的工作任务，创造和谐的工作环境。", suggestions: ["避免优柔寡断", "明确分工和责任", "保持开放的沟通"] },
+                    "天蝎座": { rate: 75, description: "天秤座的协调能力与天蝎座的深度形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "明确工作目标", "互相理解和支持"] },
+                    "射手座": { rate: 85, description: "天秤座的协调能力与射手座的乐观形成互补。你们能够共同完成需要团队合作和创新的工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "摩羯座": { rate: 70, description: "天秤座的协调能力与摩羯座的务实形成互补。你们能够共同完成需要团队合作和务实的工作任务。", suggestions: ["保持开放的沟通", "明确分工和责任", "互相支持和鼓励"] },
+                    "水瓶座": { rate: 85, description: "这是一对善于沟通和创新的同事组合。你们能够共同完成需要团队合作和创新的工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "双鱼座": { rate: 75, description: "天秤座的协调能力与双鱼座的直觉形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] }
+                },
+                "天蝎座": {
+                    "白羊座": { rate: 65, description: "天蝎座的深沉与白羊座的直接可能导致工作中的误解。需要更多的理解和适应才能和谐共事。", suggestions: ["保持专业的沟通", "明确工作目标", "互相理解和支持"] },
+                    "金牛座": { rate: 75, description: "天蝎座的深度与金牛座的稳定形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "明确工作目标", "互相支持和鼓励"] },
+                    "双子座": { rate: 65, description: "天蝎座的深度与双子座的表面形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["保持专业的沟通", "明确工作目标", "互相理解和支持"] },
+                    "巨蟹座": { rate: 85, description: "这是一对情感深度和理解的同事组合。你们能够互相支持和鼓励，共同面对工作中的挑战。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "狮子座": { rate: 70, description: "天蝎座的深沉与狮子座的自信形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["保持专业的沟通", "明确工作目标", "互相理解和支持"] },
+                    "处女座": { rate: 80, description: "处女座的细致与天蝎座的深度形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "天秤座": { rate: 75, description: "天秤座的协调能力与天蝎座的深度形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "明确工作目标", "互相理解和支持"] },
+                    "天蝎座": { rate: 70, description: "两个天蝎座的同事组合充满深度和洞察力。你们能够共同面对工作中的挑战，解决复杂的问题。", suggestions: ["避免过度分析", "保持开放的沟通", "互相支持和鼓励"] },
+                    "射手座": { rate: 75, description: "天蝎座的深度与射手座的乐观形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "明确工作目标", "互相理解和支持"] },
+                    "摩羯座": { rate: 85, description: "天蝎座的深度与摩羯座的务实形成强大同事组合。你们能够共同面对工作中的挑战，解决复杂的问题。", suggestions: ["共同制定工作计划", "分工合作", "互相支持和鼓励"] },
+                    "水瓶座": { rate: 75, description: "水瓶座的创新与天蝎座的深度形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "明确工作目标", "互相理解和支持"] },
+                    "双鱼座": { rate: 85, description: "天蝎座的深度与双鱼座的直觉形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] }
+                },
+                "射手座": {
+                    "白羊座": { rate: 90, description: "两个火象星座的同事组合充满活力和创意。你们能够一起提出新想法，高效完成工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "金牛座": { rate: 60, description: "射手座的自由与金牛座的稳定形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["明确工作目标", "保持开放的沟通", "互相理解和支持"] },
+                    "双子座": { rate: 85, description: "两个喜欢自由和创新的星座同事组合。你们能够一起提出新想法，高效完成工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "巨蟹座": { rate: 70, description: "射手座的乐观与巨蟹座的关怀形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "狮子座": { rate: 85, description: "两个火象星座的同事组合充满热情和领导力。你们能够互相支持和鼓励，共同完成重要的工作任务。", suggestions: ["明确分工和责任", "互相支持和鼓励", "保持开放的沟通"] },
+                    "处女座": { rate: 70, description: "射手座的随性与处女座的细致形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "天秤座": { rate: 85, description: "天秤座的协调能力与射手座的乐观形成互补。你们能够共同完成需要团队合作和创新的工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "天蝎座": { rate: 75, description: "射手座的乐观与天蝎座的深度形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "明确工作目标", "互相理解和支持"] },
+                    "射手座": { rate: 80, description: "两个射手座的同事组合充满自由和创新。你们能够一起提出新想法，高效完成工作任务，创造积极的工作环境。", suggestions: ["保持开放的沟通", "明确分工和责任", "互相支持和鼓励"] },
+                    "摩羯座": { rate: 75, description: "射手座的自由与摩羯座的务实形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["明确工作目标", "保持开放的沟通", "互相理解和支持"] },
+                    "水瓶座": { rate: 90, description: "这是一对自由和创新的同事组合。你们都重视独立和探索，能够一起提出新想法，高效完成工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "双鱼座": { rate: 75, description: "射手座的理性与双鱼座的直觉形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] }
+                },
+                "摩羯座": {
+                    "白羊座": { rate: 75, description: "摩羯座的务实与白羊座的行动力形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["明确工作目标", "分工合作", "互相支持和鼓励"] },
+                    "金牛座": { rate: 95, description: "这是一对务实和稳定的同事组合。你们都重视事业和未来，能够共同创造成功的工作成果。", suggestions: ["共同制定工作计划", "分工合作", "互相支持和鼓励"] },
+                    "双子座": { rate: 70, description: "摩羯座的务实与双子座的灵活形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["明确工作目标", "保持开放的沟通", "互相理解和支持"] },
+                    "巨蟹座": { rate: 80, description: "摩羯座的稳定与巨蟹座的关怀形成可靠同事组合。你们能够互相支持和理解，共同完成工作任务。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "狮子座": { rate: 65, description: "摩羯座的务实与狮子座的张扬形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["互相尊重和理解", "明确分工和责任", "保持专业的沟通"] },
+                    "处女座": { rate: 90, description: "处女座的细致与摩羯座的务实形成强大同事组合。你们能够共同完成需要细致和务实的工作任务，注重质量和效率。", suggestions: ["共同制定工作计划", "分工合作", "互相支持和鼓励"] },
+                    "天秤座": { rate: 70, description: "摩羯座的务实与天秤座的协调能力形成互补。你们能够共同完成需要团队合作和务实的工作任务。", suggestions: ["保持开放的沟通", "明确分工和责任", "互相支持和鼓励"] },
+                    "天蝎座": { rate: 85, description: "天蝎座的深度与摩羯座的务实形成强大同事组合。你们能够共同面对工作中的挑战，解决复杂的问题。", suggestions: ["共同制定工作计划", "分工合作", "互相支持和鼓励"] },
+                    "射手座": { rate: 75, description: "摩羯座的务实与射手座的自由形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["明确工作目标", "保持开放的沟通", "互相理解和支持"] },
+                    "摩羯座": { rate: 85, description: "两个摩羯座的同事组合充满务实和计划。你们能够共同制定和执行工作计划，注重效率和成果。", suggestions: ["共同制定工作计划", "互相支持和鼓励", "保持开放的沟通"] },
+                    "水瓶座": { rate: 75, description: "摩羯座的传统与水瓶座的创新形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "双鱼座": { rate: 85, description: "摩羯座的稳定与双鱼座的直觉形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] }
+                },
+                "水瓶座": {
+                    "白羊座": { rate: 85, description: "水瓶座的创新与白羊座的行动力形成强大同事组合。你们能够一起提出新想法，高效完成工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "金牛座": { rate: 65, description: "水瓶座的创新与金牛座的传统形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "双子座": { rate: 95, description: "这是一对充满创意和创新的同事组合。你们能够一起提出新想法，高效完成工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "巨蟹座": { rate: 70, description: "水瓶座的理性与巨蟹座的感性形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "狮子座": { rate: 80, description: "水瓶座的创新与狮子座的领导力形成互补。你们能够共同完成需要创新和执行力的工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "处女座": { rate: 70, description: "水瓶座的创新与处女座的传统形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "天秤座": { rate: 85, description: "这是一对善于沟通和创新的同事组合。你们能够共同完成需要团队合作和创新的工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "天蝎座": { rate: 75, description: "水瓶座的理性与天蝎座的深度形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "明确工作目标", "互相理解和支持"] },
+                    "射手座": { rate: 90, description: "这是一对自由和创新的同事组合。你们都重视独立和探索，能够一起提出新想法，高效完成工作任务。", suggestions: ["保持开放的沟通", "分工合作", "互相支持和鼓励"] },
+                    "摩羯座": { rate: 75, description: "水瓶座的创新与摩羯座的传统形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "水瓶座": { rate: 85, description: "两个水瓶座的同事组合充满创新和思想。你们能够一起提出新想法，高效完成工作任务，创造积极的工作环境。", suggestions: ["保持开放的沟通", "明确分工和责任", "互相支持和鼓励"] },
+                    "双鱼座": { rate: 75, description: "水瓶座的理性与双鱼座的直觉形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] }
+                },
+                "双鱼座": {
+                    "白羊座": { rate: 60, description: "双鱼座的敏感与白羊座的直接可能导致工作中的误解。需要更多的理解和适应才能和谐共事。", suggestions: ["保持专业的沟通", "明确工作目标", "互相理解和支持"] },
+                    "金牛座": { rate: 85, description: "双鱼座的直觉与金牛座的稳重形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "双子座": { rate: 70, description: "双鱼座的感性与双子座的理性形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "巨蟹座": { rate: 90, description: "这是一对情感深度和同理心的同事组合。你们能够互相理解和支持，共同创造和谐的工作环境。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "狮子座": { rate: 65, description: "双鱼座的敏感与狮子座的自信形成对比。需要更多的理解和适应才能和谐共事。", suggestions: ["保持专业的沟通", "明确工作目标", "互相理解和支持"] },
+                    "处女座": { rate: 85, description: "处女座的实际与双鱼座的直觉形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "天秤座": { rate: 75, description: "天秤座的协调能力与双鱼座的直觉形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "天蝎座": { rate: 85, description: "天蝎座的深度与双鱼座的直觉形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "射手座": { rate: 75, description: "射手座的理性与双鱼座的直觉形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "摩羯座": { rate: 85, description: "摩羯座的稳定与双鱼座的直觉形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] },
+                    "水瓶座": { rate: 75, description: "水瓶座的理性与双鱼座的直觉形成互补。你们能够互相学习，共同提高工作效率。", suggestions: ["保持开放的沟通", "互相理解和支持", "明确工作目标"] },
+                    "双鱼座": { rate: 80, description: "两个双鱼座的同事组合充满情感和直觉。你们能够互相理解和支持，共同创造和谐的工作环境。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "明确工作目标"] }
+                },
+                "family": {
+                    "白羊座": { rate: 75, description: "白羊座的直率在家庭中可能需要更多耐心。他们充满活力，能给家庭带来欢乐，但需要学会控制脾气。", suggestions: ["保持开放的沟通", "互相尊重个人空间", "共同参与家庭活动"] },
+                    "金牛座": { rate: 85, description: "金牛座是家庭的稳定器，他们重视家庭和谐，能创造温馨的家庭氛围。", suggestions: ["共同规划家庭未来", "定期家庭聚会", "表达爱意和感激"] },
+                    "双子座": { rate: 75, description: "双子座能为家庭带来活力和乐趣，但需要更多的稳定性和责任感。", suggestions: ["保持家庭沟通", "参与家庭活动", "承担家庭责任"] },
+                    "巨蟹座": { rate: 100, description: "巨蟹座是天生的家庭守护者，他们充满关爱，能创造最温馨的家庭环境。", suggestions: ["创造家庭传统", "表达爱意和感激", "共同面对家庭挑战"] },
+                    "狮子座": { rate: 80, description: "狮子座的自信能给家庭带来力量，但需要学会倾听和妥协。", suggestions: ["互相尊重和欣赏", "共同参与家庭决策", "表达爱意和感激"] },
+                    "处女座": { rate: 90, description: "处女座的家庭管理能力出色，能创造有序和舒适的家庭环境。", suggestions: ["共同分担家务", "保持开放的沟通", "互相支持和鼓励"] },
+                    "天秤座": { rate: 85, description: "天秤座的协调能力能让家庭和谐，他们重视家庭关系和平衡。", suggestions: ["保持家庭和谐", "共同参与家庭活动", "互相理解和包容"] },
+                    "天蝎座": { rate: 90, description: "天蝎座对家庭忠诚度极高，能创造深厚的家庭情感连接。", suggestions: ["建立家庭信任", "共同面对家庭挑战", "表达爱意和感激"] },
+                    "射手座": { rate: 75, description: "射手座的乐观能给家庭带来欢乐，但需要更多的家庭责任感。", suggestions: ["参与家庭活动", "承担家庭责任", "保持开放的沟通"] },
+                    "摩羯座": { rate: 95, description: "摩羯座是家庭的支柱，他们务实可靠，能为家庭提供稳定和安全。", suggestions: ["共同规划家庭未来", "互相支持和鼓励", "平衡工作和家庭"] },
+                    "水瓶座": { rate: 75, description: "水瓶座的独立思想能让家庭更有趣，但需要更多的情感表达。", suggestions: ["保持家庭沟通", "表达爱意和感激", "互相理解和包容"] },
+                    "双鱼座": { rate: 90, description: "双鱼座充满爱心，能给家庭带来温暖和关怀，创造温馨的家庭氛围。", suggestions: ["创造家庭回忆", "表达爱意和感激", "共同面对家庭挑战"] }
+                },
+                "other": {
+                    "白羊座": { rate: 70, description: "白羊座的直率在一般关系中需要更多的理解和适应。他们充满活力，能给关系带来新鲜感。", suggestions: ["保持开放的沟通", "互相尊重和理解", "找到共同兴趣"] },
+                    "金牛座": { rate: 80, description: "金牛座在一般关系中稳重可靠，能创造稳定的关系基础。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "找到共同点"] },
+                    "双子座": { rate: 85, description: "双子座的机智能让一般关系更有趣，他们善于沟通，能建立良好的关系。", suggestions: ["保持开放的沟通", "互相理解和包容", "共同参与活动"] },
+                    "巨蟹座": { rate: 80, description: "巨蟹座在一般关系中充满关怀，能建立温暖的关系连接。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "表达感激之情"] },
+                    "狮子座": { rate: 75, description: "狮子座的自信能给一般关系带来活力，但需要学会倾听和妥协。", suggestions: ["互相尊重和欣赏", "保持开放的沟通", "共同参与活动"] },
+                    "处女座": { rate: 80, description: "处女座在一般关系中细致可靠，能建立稳定的关系基础。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "互相理解和包容"] },
+                    "天秤座": { rate: 90, description: "天秤座的协调能力能让一般关系和谐，他们善于平衡各种关系。", suggestions: ["保持开放的沟通", "互相理解和包容", "共同参与活动"] },
+                    "天蝎座": { rate: 75, description: "天蝎座在一般关系中忠诚度高，能建立深厚的情感连接。", suggestions: ["建立信任", "保持开放的沟通", "互相支持和鼓励"] },
+                    "射手座": { rate: 85, description: "射手座的乐观能让一般关系更有趣，他们善于探索，能给关系带来新鲜感。", suggestions: ["保持开放的沟通", "共同参与活动", "互相理解和包容"] },
+                    "摩羯座": { rate: 80, description: "摩羯座在一般关系中务实可靠，能建立稳定的关系基础。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "找到共同点"] },
+                    "水瓶座": { rate: 85, description: "水瓶座的创新思想能让一般关系更有趣，他们善于交流，能建立良好的关系。", suggestions: ["保持开放的沟通", "互相理解和包容", "共同探索新事物"] },
+                    "双鱼座": { rate: 80, description: "双鱼座在一般关系中充满同情心，能建立温暖的关系连接。", suggestions: ["保持开放的沟通", "互相支持和鼓励", "表达感激之情"] }
+                }
+            }
+        };
+
+        // 初始化 LeanCloud (知晓云基于LeanCloud)
+        const appId = 'b1ddc3e95094b41956bd'; // 替换为你的 Client ID
+        const appKey = '34dca2d925ef9352cf7658e57ae650acf3555031'; // 替换为你的 Client Secret
+        
+        // 初始化 SDK
+        AV.init({
+          appId: appId,
+          appKey: appKey,
+          serverURLs: 'https://cloud.minapp.com' // 知晓云服务器地址
+        });
+        
+        // 定义数据模型
+        const User = AV.Object.extend('users');
+        const Match = AV.Object.extend('matches');
+
+        // DOM元素
+        const calculateBtn = document.getElementById('calculate-btn');
+        const inputSection = document.getElementById('input-section');
+        const resultSection = document.getElementById('result-section');
+        const person1Info = document.getElementById('person1-info');
+        const person2Info = document.getElementById('person2-info');
+        const twoPersonMatch = document.getElementById('two-person-match');
+        const allMatch = document.getElementById('all-match');
+        const backToTopBtn = document.getElementById('back-to-top');
+        const enablePerson2 = document.getElementById('enable-person2');
+        const person2Form = document.getElementById('person2-form');
+        const name2Input = document.getElementById('name2');
+        const birthdate2Input = document.getElementById('birthdate2');
+        const birthplace2Input = document.getElementById('birthplace2');
+
+        // 数据库操作函数
+        // 存储用户信息
+        async function saveUserInfo(name, gender, birthdate, birthplace, constellation) {
+          try {
+            const user = new User();
+            user.set('name', name);
+            user.set('gender', gender);
+            user.set('birthdate', birthdate);
+            user.set('birthplace', birthplace);
+            user.set('constellation', constellation);
+            user.set('created_at', new Date());
+            await user.save();
+            console.log('用户信息存储成功');
+          } catch (error) {
+            console.error('用户信息存储失败:', error);
+          }
+        }
+
+        // 存储匹配结果
+        async function saveMatchResult(user1, user2, relationship, matchScore, matchAnalysis) {
+          try {
+            const match = new Match();
+            match.set('user1_name', user1.name);
+            match.set('user1_gender', user1.gender);
+            match.set('user1_constellation', user1.constellation);
+            match.set('user2_name', user2.name);
+            match.set('user2_gender', user2.gender);
+            match.set('user2_constellation', user2.constellation);
+            match.set('relationship', relationship);
+            match.set('match_score', matchScore);
+            match.set('match_analysis', matchAnalysis);
+            match.set('created_at', new Date());
+            await match.save();
+            console.log('匹配结果存储成功');
+          } catch (error) {
+            console.error('匹配结果存储失败:', error);
+          }
+        }
+
+        // 查询历史匹配记录
+        async function getMatchHistory() {
+          try {
+            const query = new AV.Query(Match);
+            query.descending('created_at');
+            query.limit(10);
+            const results = await query.find();
+            return results.map(result => ({
+              _id: result.id,
+              user1_name: result.get('user1_name'),
+              user1_gender: result.get('user1_gender'),
+              user1_constellation: result.get('user1_constellation'),
+              user2_name: result.get('user2_name'),
+              user2_gender: result.get('user2_gender'),
+              user2_constellation: result.get('user2_constellation'),
+              relationship: result.get('relationship'),
+              match_score: result.get('match_score'),
+              match_analysis: result.get('match_analysis'),
+              created_at: result.get('created_at')
+            }));
+          } catch (error) {
+            console.error('查询历史记录失败:', error);
+            return [];
+          }
+        }
+
+        // 获取关系类型文本
+        function getRelationshipText(relationship) {
+          const relationshipMap = {
+            'love': '恋人关系',
+            'friend': '朋友关系',
+            'colleague': '同事关系',
+            'family': '家人关系',
+            'other': '其他关系'
+          };
+          return relationshipMap[relationship] || relationship;
+        }
+
+        // 格式化日期
+        function formatDate(timestamp) {
+          const date = new Date(timestamp);
+          return date.toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        }
+
+        // 展示历史记录
+        async function showMatchHistory() {
+          const historyList = document.getElementById('history-list');
+          if (!historyList) return;
+          
+          // 显示加载状态
+          historyList.innerHTML = '<p class="text-center text-gray-400">加载中...</p>';
+          
+          try {
+            const historyData = await getMatchHistory();
+            
+            if (historyData.length === 0) {
+              historyList.innerHTML = '<p class="text-center text-gray-400">暂无历史匹配记录</p>';
+              return;
+            }
+            
+            let html = '';
+            historyData.forEach(item => {
+              html += `
+                <div class="bg-gray-800 rounded-lg p-4">
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="font-medium">${item.user1_name} (${item.user1_constellation})</span>
+                    <span class="text-primary font-bold">${item.match_score}%</span>
+                    <span class="font-medium">${item.user2_name} (${item.user2_constellation})</span>
+                  </div>
+                  <div class="text-sm text-gray-400 mb-2">
+                    <span>关系: ${getRelationshipText(item.relationship)}</span> · 
+                    <span>${formatDate(item.created_at)}</span>
+                  </div>
+                  <p class="text-sm text-gray-300">${item.match_analysis}</p>
+                </div>
+              `;
+            });
+            
+            historyList.innerHTML = html;
+          } catch (error) {
+            console.error('加载历史记录失败:', error);
+            historyList.innerHTML = '<p class="text-center text-red-400">加载历史记录失败</p>';
+          }
+        }
+
+        // 显示加载状态
+        function showLoading() {
+          const calculateBtn = document.getElementById('calculate-btn');
+          if (calculateBtn) {
+            calculateBtn.disabled = true;
+            calculateBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>计算中...';
+          }
+        }
+
+        // 隐藏加载状态
+        function hideLoading() {
+          const calculateBtn = document.getElementById('calculate-btn');
+          if (calculateBtn) {
+            calculateBtn.disabled = false;
+            calculateBtn.innerHTML = '<i class="fa fa-calculator mr-2"></i>Calculate';
+          }
+        }
+
+        // 显示错误消息
+        function showError(message) {
+          // 检查是否已存在错误消息元素
+          let errorElement = document.getElementById('error-message');
+          if (!errorElement) {
+            errorElement = document.createElement('div');
+            errorElement.id = 'error-message';
+            errorElement.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 max-w-xs';
+            document.body.appendChild(errorElement);
+          }
+          errorElement.textContent = message;
+          errorElement.style.display = 'block';
+          
+          // 3秒后自动隐藏
+          setTimeout(() => {
+            errorElement.style.display = 'none';
+          }, 3000);
+        }
+
+        // 显示成功消息
+        function showSuccess(message) {
+          // 检查是否已存在成功消息元素
+          let successElement = document.getElementById('success-message');
+          if (!successElement) {
+            successElement = document.createElement('div');
+            successElement.id = 'success-message';
+            successElement.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 max-w-xs';
+            document.body.appendChild(successElement);
+          }
+          successElement.textContent = message;
+          successElement.style.display = 'block';
+          
+          // 3秒后自动隐藏
+          setTimeout(() => {
+            successElement.style.display = 'none';
+          }, 3000);
+        }
+
+        // 对方信息勾选框逻辑
+        enablePerson2.addEventListener('change', function() {
+            if (this.checked) {
+                person2Form.classList.remove('hidden');
+                person2Form.classList.add('block');
+            } else {
+                person2Form.classList.add('hidden');
+                person2Form.classList.remove('block');
+                name2Input.value = '';
+                birthdate2Input.value = '';
+                birthplace2Input.value = '';
+            }
+        });
+
+        // 关系类型选择逻辑
+        document.querySelectorAll('.relationship-radio').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.querySelectorAll('.relationship-option').forEach(option => {
+                    option.classList.remove('border-primary', 'bg-gray-700');
+                    option.classList.add('border-transparent');
+                });
+                
+                if (this.checked) {
+                    const optionDiv = this.nextElementSibling;
+                    optionDiv.classList.remove('border-transparent');
+                    optionDiv.classList.add('border-primary', 'bg-gray-700');
+                }
+            });
+        });
+
+        // 初始化关系类型选择样式
+        document.addEventListener('DOMContentLoaded', () => {
+            const checkedRadio = document.querySelector('.relationship-radio:checked');
+            if (checkedRadio) {
+                const optionDiv = checkedRadio.nextElementSibling;
+                optionDiv.classList.remove('border-transparent');
+                optionDiv.classList.add('border-primary', 'bg-gray-700');
+            }
+        });
+
+        // 生成背景星星
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const starsCount = 300;
+            
+            for (let i = 0; i < starsCount; i++) {
+                const star = document.createElement('div');
+                star.classList.add('absolute', 'bg-white', 'rounded-full', 'star-glow');
+                
+                // 随机大小
+                const size = Math.random() * 3;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                
+                // 随机位置
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                
+                // 随机透明度
+                star.style.opacity = Math.random() * 0.8 + 0.2;
+                
+                // 随机闪烁动画
+                const duration = Math.random() * 3 + 2;
+                star.style.animation = `float ${duration}s ease-in-out infinite`;
+                star.style.animationDelay = `${Math.random() * 5}s`;
+                
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // 生成星座图案
+        function createConstellationPatterns() {
+            const container = document.getElementById('constellation-patterns');
+            const patterns = [
+                { // 大熊星座
+                    points: [[10, 20], [15, 15], [20, 25], [25, 10], [30, 20], [35, 5], [40, 15]],
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    size: 1.5,
+                    top: '10%',
+                    left: '5%',
+                    rotation: '15deg'
+                },
+                { // 猎户座
+                    points: [[10, 30], [20, 20], [30, 30], [20, 40], [15, 50], [25, 50], [35, 45]],
+                    color: 'rgba(255, 255, 255, 0.4)',
+                    size: 2,
+                    top: '40%',
+                    left: '70%',
+                    rotation: '-10deg'
+                },
+                { // 天鹅座
+                    points: [[5, 20], [15, 15], [25, 10], [35, 15], [45, 20], [35, 25], [25, 30], [15, 25]],
+                    color: 'rgba(255, 255, 255, 0.3)',
+                    size: 1.2,
+                    top: '20%',
+                    left: '75%',
+                    rotation: '25deg'
+                },
+                { // 天龙座
+                    points: [[5, 10], [15, 15], [25, 10], [35, 20], [45, 15], [55, 25], [65, 20], [75, 30]],
+                    color: 'rgba(255, 255, 255, 0.25)',
+                    size: 1,
+                    top: '60%',
+                    left: '10%',
+                    rotation: '-5deg'
+                }
+            ];
+
+            patterns.forEach((pattern, index) => {
+                const patternElement = document.createElement('div');
+                patternElement.classList.add('absolute', 'floating', `floating-delay-${index % 3 + 1}`);
+                patternElement.style.top = pattern.top;
+                patternElement.style.left = pattern.left;
+                patternElement.style.transform = `rotate(${pattern.rotation})`;
+                patternElement.style.width = '100px';
+                patternElement.style.height = '100px';
+                
+                // 创建星星
+                pattern.points.forEach((point, i) => {
+                    const star = document.createElement('div');
+                    star.classList.add('absolute', 'bg-white', 'rounded-full');
+                    star.style.width = `${pattern.size}px`;
+                    star.style.height = `${pattern.size}px`;
+                    star.style.left = `${point[0]}px`;
+                    star.style.top = `${point[1]}px`;
+                    star.style.boxShadow = `0 0 ${pattern.size * 2}px ${pattern.color}`;
+                    patternElement.appendChild(star);
+                    
+                    // 创建连线
+                    if (i < pattern.points.length - 1) {
+                        const line = document.createElement('div');
+                        const x1 = point[0];
+                        const y1 = point[1];
+                        const x2 = pattern.points[i + 1][0];
+                        const y2 = pattern.points[i + 1][1];
+                        
+                        const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                        const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+                        
+                        line.classList.add('absolute', 'bg-white');
+                        line.style.width = `${length}px`;
+                        line.style.height = '1px';
+                        line.style.left = `${x1}px`;
+                        line.style.top = `${y1 + pattern.size / 2}px`;
+                        line.style.transformOrigin = '0 0';
+                        line.style.transform = `rotate(${angle}deg)`;
+                        line.style.opacity = '0.2';
+                        
+                        patternElement.appendChild(line);
+                    }
+                });
+                
+                container.appendChild(patternElement);
+            });
+        }
+
+        // 根据生日计算星座
+        function calculateConstellation(birthdate) {
+            const date = new Date(birthdate);
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            for (const constellation of constellationData) {
+                const start = constellation.dateRange.start;
+                const end = constellation.dateRange.end;
+                
+                if ((month === start.month && day >= start.day) || 
+                    (month === end.month && day <= end.day) ||
+                    (month > start.month && month < end.month)) {
+                    return constellation;
+                }
+                
+                // 处理摩羯座的跨年情况
+                if (constellation.name === "摩羯座" && 
+                    ((month === 12 && day >= 22) || (month === 1 && day <= 19))) {
+                    return constellation;
+                }
+            }
+            
+            return null;
+        }
+
+        // 显示个人星座信息
+        function displayPersonInfo(personId, name, constellation) {
+            const container = personId === 1 ? person1Info : person2Info;
+            
+            // 清空容器
+            container.innerHTML = '';
+            
+            // 创建星座信息卡片
+            const infoCard = document.createElement('div');
+            infoCard.classList.add('bg-gray-800', 'rounded-lg', 'p-4', 'mb-4', 'relative', 'overflow-hidden');
+            
+            // 添加装饰元素
+            const decoration = document.createElement('div');
+            decoration.classList.add('absolute', 'top-0', 'right-0', 'w-24', 'h-24', 'opacity-10');
+            decoration.style.backgroundImage = `url(${constellationIcons[constellation.name]})`;
+            decoration.style.backgroundSize = 'contain';
+            decoration.style.backgroundRepeat = 'no-repeat';
+            decoration.style.backgroundPosition = 'center';
+            infoCard.appendChild(decoration);
+            
+            // 星座名称和符号
+            const header = document.createElement('div');
+            header.classList.add('flex', 'items-center', 'justify-between', 'mb-4', 'relative', 'z-10');
+            
+            const nameElement = document.createElement('h3');
+            nameElement.classList.add('text-xl', 'font-semibold');
+            nameElement.textContent = name;
+            
+            const symbolContainer = document.createElement('div');
+            symbolContainer.classList.add('flex', 'items-center');
+            
+            const symbolElement = document.createElement('div');
+            symbolElement.classList.add('text-4xl', 'mr-2', 'constellation-icon');
+            symbolElement.textContent = constellation.symbol;
+            
+            const elementBadge = document.createElement('span');
+            elementBadge.classList.add(`px-2`, 'py-1', 'rounded-full', 'text-xs', `bg-${constellation.color}-500`, 'text-white');
+            elementBadge.textContent = constellation.element象;
+            
+            symbolContainer.appendChild(symbolElement);
+            symbolContainer.appendChild(elementBadge);
+            
+            header.appendChild(nameElement);
+            header.appendChild(symbolContainer);
+            
+            // 星座基本信息
+            const basicInfo = document.createElement('div');
+            basicInfo.classList.add('grid', 'grid-cols-2', 'gap-4', 'mb-4');
+            
+            const elementItem = document.createElement('div');
+            elementItem.classList.add('flex', 'items-center');
+            elementItem.innerHTML = `<span class="text-gray-400 mr-2">元素:</span> <span class="text-${constellation.color}">${constellation.element}</span>`;
+            
+            const dateRangeItem = document.createElement('div');
+            dateRangeItem.classList.add('flex', 'items-center');
+            const start = constellation.dateRange.start;
+            const end = constellation.dateRange.end;
+            dateRangeItem.innerHTML = `<span class="text-gray-400 mr-2">日期:</span> <span>${start.month}/${start.day}-${end.month}/${end.day}</span>`;
+            
+            basicInfo.appendChild(elementItem);
+            basicInfo.appendChild(dateRangeItem);
+            
+            // 性格特点
+            const characteristics = document.createElement('div');
+            characteristics.classList.add('mb-4');
+            
+            const characteristicsTitle = document.createElement('h4');
+            characteristicsTitle.classList.add('text-sm', 'text-gray-400', 'mb-2');
+            characteristicsTitle.textContent = '性格特点';
+            
+            const characteristicsList = document.createElement('div');
+            characteristicsList.classList.add('flex', 'flex-wrap', 'gap-2');
+            
+            for (const trait of constellation.characteristics) {
+                const traitTag = document.createElement('span');
+                traitTag.classList.add('px-2', 'py-1', 'bg-gray-700', 'rounded-full', 'text-sm');
+                traitTag.textContent = trait;
+                characteristicsList.appendChild(traitTag);
+            }
+            
+            characteristics.appendChild(characteristicsTitle);
+            characteristics.appendChild(characteristicsList);
+            
+            // 优缺点
+            const strengthsWeaknesses = document.createElement('div');
+            strengthsWeaknesses.classList.add('grid', 'grid-cols-1', 'sm:grid-cols-2', 'gap-4');
+            
+            // 优点
+            const strengths = document.createElement('div');
+            
+            const strengthsTitle = document.createElement('h4');
+            strengthsTitle.classList.add('text-sm', 'text-gray-400', 'mb-2');
+            strengthsTitle.textContent = '优点';
+            
+            const strengthsList = document.createElement('ul');
+            strengthsList.classList.add('list-disc', 'list-inside', 'text-sm');
+            
+            for (const strength of constellation.strengths) {
+                const strengthItem = document.createElement('li');
+                strengthItem.textContent = strength;
+                strengthsList.appendChild(strengthItem);
+            }
+            
+            strengths.appendChild(strengthsTitle);
+            strengths.appendChild(strengthsList);
+            
+            // 缺点
+            const weaknesses = document.createElement('div');
+            
+            const weaknessesTitle = document.createElement('h4');
+            weaknessesTitle.classList.add('text-sm', 'text-gray-400', 'mb-2');
+            weaknessesTitle.textContent = '缺点';
+            
+            const weaknessesList = document.createElement('ul');
+            weaknessesList.classList.add('list-disc', 'list-inside', 'text-sm');
+            
+            for (const weakness of constellation.weaknesses) {
+                const weaknessItem = document.createElement('li');
+                weaknessItem.textContent = weakness;
+                weaknessesList.appendChild(weaknessItem);
+            }
+            
+            weaknesses.appendChild(weaknessesTitle);
+            weaknesses.appendChild(weaknessesList);
+            
+            strengthsWeaknesses.appendChild(strengths);
+            strengthsWeaknesses.appendChild(weaknesses);
+            
+            // 组装卡片
+            infoCard.appendChild(header);
+            infoCard.appendChild(basicInfo);
+            infoCard.appendChild(characteristics);
+            infoCard.appendChild(strengthsWeaknesses);
+            
+            // 添加到容器
+            container.appendChild(infoCard);
+            
+            // 星座介绍
+            const introCard = document.createElement('div');
+            introCard.classList.add('bg-gray-800', 'rounded-lg', 'p-4');
+            
+            const introTitle = document.createElement('h4');
+            introTitle.classList.add('text-sm', 'text-gray-400', 'mb-2');
+            introTitle.textContent = '星座介绍';
+            
+            const introText = document.createElement('p');
+            introText.classList.add('text-sm');
+            introText.textContent = constellation.introduction;
+            
+            introCard.appendChild(introTitle);
+            introCard.appendChild(introText);
+            
+            container.appendChild(introCard);
+            
+            // 显示容器
+            container.classList.remove('hidden');
+        }
+
+        // 显示两个人的匹配结果
+        function displayTwoPersonMatch(name1, name2, gender1, gender2, constellation1, constellation2, relationship) {
+            const matchData = compatibilityData[relationship][constellation1.name][constellation2.name];
+            
+            // 获取关系类型名称
+            const relationshipNames = {
+                'love': '恋人关系',
+                'friend': '朋友关系',
+                'colleague': '同事关系',
+                'family': '家人关系',
+                'other': '其他关系'
+            };
+            
+            // 设置匹配度名称
+            document.getElementById('match-name1').textContent = `${name1} (${constellation1.symbol})`;
+            document.getElementById('match-name2').textContent = `${name2} (${constellation2.symbol})`;
+            
+            // 设置匹配度分数
+            document.getElementById('match-score').textContent = `${matchData.rate}%`;
+            
+            // 设置进度条
+            const progressBar = document.getElementById('match-progress');
+            progressBar.style.width = '0%';
+            
+            // 动画显示进度条
+            setTimeout(() => {
+                progressBar.style.width = `${matchData.rate}%`;
+            }, 300);
+            
+            // 设置匹配分析（结合关系类型和性别）
+            const matchAnalysis = document.getElementById('match-analysis');
+            matchAnalysis.innerHTML = `
+                <div class="mb-2">
+                    <span class="text-primary font-semibold">关系类型：</span>
+                    <span class="text-gray-300">${relationshipNames[relationship]}</span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-primary font-semibold">元素组合：</span>
+                    <span class="text-gray-300">${constellation1.element}象 + ${constellation2.element}象</span>
+                </div>
+                <div class="mb-2">
+                    <span class="text-primary font-semibold">性别组合：</span>
+                    <span class="text-gray-300">${gender1 === 'male' ? '男' : '女'} + ${gender2 === 'male' ? '男' : '女'}</span>
+                </div>
+                <div class="mt-3">
+                    <span class="text-gray-400">${matchData.description}</span>
+                </div>
+            `;
+            
+            // 设置相处建议
+            const suggestionsList = document.getElementById('match-suggestions');
+            suggestionsList.innerHTML = '';
+            
+            for (const suggestion of matchData.suggestions) {
+                const li = document.createElement('li');
+                li.textContent = suggestion;
+                suggestionsList.appendChild(li);
+            }
+            
+            // 添加更详细的分析
+            const detailSection = document.createElement('div');
+            detailSection.className = 'bg-gray-800 rounded-lg p-4 mt-4';
+            detailSection.innerHTML = `
+                <h4 class="font-semibold mb-3 text-primary">详细分析</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h5 class="text-sm text-gray-400 mb-2">${name1} (${constellation1.name}, ${gender1 === 'male' ? '男' : '女'})</h5>
+                        <div class="space-y-1 text-sm">
+                            <p><span class="text-gray-400">性格特点：</span>${constellation1.characteristics.join('、')}</p>
+                            <p><span class="text-gray-400">优点：</span>${constellation1.strengths.slice(0, 2).join('、')}</p>
+                            <p><span class="text-gray-400">需要注意：</span>${constellation1.weaknesses[0]}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h5 class="text-sm text-gray-400 mb-2">${name2} (${constellation2.name}, ${gender2 === 'male' ? '男' : '女'})</h5>
+                        <div class="space-y-1 text-sm">
+                            <p><span class="text-gray-400">性格特点：</span>${constellation2.characteristics.join('、')}</p>
+                            <p><span class="text-gray-400">优点：</span>${constellation2.strengths.slice(0, 2).join('、')}</p>
+                            <p><span class="text-gray-400">需要注意：</span>${constellation2.weaknesses[0]}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-700">
+                    <h5 class="text-sm text-gray-400 mb-2">${relationshipNames[relationship]}中的相处要点</h5>
+                    <p class="text-sm text-gray-300 mb-3">${matchData.description}</p>
+                    <div class="bg-gray-700 rounded-lg p-3">
+                        <h6 class="text-xs text-gray-400 mb-2 font-semibold">针对${relationshipNames[relationship]}的详细建议</h6>
+                        <ul class="list-disc list-inside text-sm text-gray-300 space-y-2">
+                            ${getRelationshipSpecificAdvice(relationship, constellation1, constellation2, matchData, gender1, gender2)}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            const matchResultDiv = document.getElementById('match-result');
+            const existingDetail = matchResultDiv.querySelector('.bg-gray-800.rounded-lg.p-4.mt-4');
+            if (existingDetail) {
+                existingDetail.remove();
+            }
+            matchResultDiv.appendChild(detailSection);
+
+            // 返回匹配数据，用于存储到数据库
+            return {
+                score: matchData.rate,
+                analysis: matchData.description
+            };
+            
+            // 显示匹配结果
+            twoPersonMatch.classList.remove('hidden');
+        }
+
+        // 获取针对关系类型的详细建议
+        function getRelationshipSpecificAdvice(relationship, c1, c2, matchData, gender1, gender2) {
+            const advice = [];
+            
+            // 获取性别文本
+            const genderText1 = gender1 === 'male' ? '男性' : '女性';
+            const genderText2 = gender2 === 'male' ? '男性' : '女性';
+            
+            switch(relationship) {
+                case 'love':
+                    advice.push(`在恋人关系中，${genderText1}${c1.name}的${c1.strengths[0]}与${genderText2}${c2.name}的${c2.strengths[0]}能够形成互补`);
+                    advice.push(`需要注意${genderText1}${c1.name}的${c1.weaknesses[0]}可能影响感情稳定性`);
+                    advice.push(`建议通过共同活动来增进感情，如${c1.element === c2.element ? '户外运动或旅行' : '一起学习新技能'}`);
+                    advice.push('保持良好的沟通是关键，定期进行深入的情感交流');
+                    // 根据性别组合添加特定建议
+                    if (gender1 === gender2) {
+                        advice.push('同性关系中，更需要理解和包容彼此的差异，建立平等的沟通模式');
+                    } else {
+                        advice.push('异性关系中，要尊重彼此的性别差异，学会从对方的角度思考问题');
+                    }
+                    break;
+                case 'friend':
+                    advice.push(`作为朋友，${genderText1}${c1.name}的${c1.characteristics[0]}和${genderText2}${c2.name}的${c2.characteristics[0]}能让友谊更加有趣`);
+                    advice.push(`${genderText1}${c1.name}的${c1.strengths[0]}和${genderText2}${c2.name}的${c2.strengths[0]}是友谊的坚实基础`);
+                    advice.push('建议定期组织聚会或活动，保持友谊的活跃度');
+                    advice.push('在朋友关系中要互相支持，在对方需要时伸出援手');
+                    break;
+                case 'colleague':
+                    advice.push(`在职场中，${genderText1}${c1.name}的${c1.strengths[0]}和${genderText2}${c2.name}的${c2.strengths[0]}能够形成高效的工作组合`);
+                    advice.push(`需要注意${genderText1}${c1.name}的${c1.weaknesses[0]}可能影响团队合作`);
+                    advice.push('建议明确分工和责任，发挥各自的优势');
+                    advice.push('保持专业的沟通，定期进行工作复盘和反馈');
+                    break;
+                case 'family':
+                    advice.push(`在家庭关系中，${genderText1}${c1.name}的${c1.strengths[0]}能为家庭带来稳定和温暖`);
+                    advice.push(`${genderText2}${c2.name}的${c2.strengths[0]}能够增强家庭的凝聚力`);
+                    advice.push('建议共同参与家庭活动，如一起做饭、旅行或庆祝节日');
+                    advice.push('在家庭中要学会包容和理解，尊重彼此的个人空间');
+                    break;
+                case 'other':
+                    advice.push(`在一般关系中，${genderText1}${c1.name}的${c1.characteristics[0]}和${genderText2}${c2.name}的${c2.characteristics[0]}能让关系更加和谐`);
+                    advice.push(`建议找到共同的兴趣爱好，增进彼此的了解`);
+                    advice.push('保持开放和诚实的沟通，建立互信基础');
+                    advice.push('尊重彼此的差异，学会从不同角度看待问题');
+                    break;
+            }
+            
+            return advice.map(a => `<li>${a}</li>`).join('');
+        }
+
+        // 显示与所有星座的匹配结果 - 轮盘式
+        function displayAllMatches(name, constellation, relationship) {
+            const wheelCanvas = document.getElementById('wheel-canvas');
+            const ctx = wheelCanvas.getContext('2d');
+            const centerX = wheelCanvas.width / 2;
+            const centerY = wheelCanvas.height / 2;
+            const radius = 140;
+            const sliceAngle = (2 * Math.PI) / 12;
+            
+            let currentRotation = 0;
+            let isDragging = false;
+            let lastAngle = 0;
+            
+            // 获取关系类型名称
+            const relationshipNames = {
+                'love': '恋人关系',
+                'friend': '朋友关系',
+                'colleague': '同事关系',
+                'family': '家人关系',
+                'other': '其他关系'
+            };
+            
+            // 绘制轮盘
+            function drawWheel(rotation) {
+                ctx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
+                
+                // 绘制太阳背景
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                
+                // 太阳光晕
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius + 20);
+                gradient.addColorStop(0, 'rgba(255, 200, 50, 0.3)');
+                gradient.addColorStop(1, 'rgba(255, 200, 50, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, radius + 20, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // 绘制每个星座扇形
+                for (let i = 0; i < 12; i++) {
+                    const startAngle = i * sliceAngle + rotation;
+                    const endAngle = (i + 1) * sliceAngle + rotation;
+                    const c = constellationData[i];
+                    
+                    // 根据元素设置颜色
+                    let color;
+                    switch(c.element) {
+                        case '火': color = '#f97316'; break;
+                        case '土': color = '#84cc16'; break;
+                        case '风': color = '#06b6d4'; break;
+                        case '水': color = '#3b82f6'; break;
+                        default: color = '#6366f1';
+                    }
+                    
+                    // 绘制扇形
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.arc(0, 0, radius, startAngle, endAngle);
+                    ctx.closePath();
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // 绘制星座符号和名称
+                    ctx.save();
+                    ctx.rotate(startAngle + sliceAngle / 2);
+                    ctx.translate(radius * 0.7, 0);
+                    ctx.rotate(Math.PI / 2);
+                    
+                    // 星座符号
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 24px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(c.symbol, 0, -15);
+                    
+                    // 星座名称
+                    ctx.font = '12px Arial';
+                    ctx.fillText(c.name, 0, 10);
+                    
+                    ctx.restore();
+                }
+                
+                // 绘制中心圆
+                ctx.beginPath();
+                ctx.arc(0, 0, 40, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(30, 41, 59, 0.9)';
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 200, 50, 0.5)';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // 中心显示当前星座
+                const selectedIndex = Math.floor(((3 * Math.PI / 2 - rotation) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) / sliceAngle) % 12;
+                const selectedConstellation = constellationData[selectedIndex];
+                
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(selectedConstellation.symbol, 0, -5);
+                ctx.font = '10px Arial';
+                ctx.fillText(selectedConstellation.name, 0, 10);
+                
+                ctx.restore();
+            }
+            
+            // 获取鼠标/触摸角度
+            function getAngle(e) {
+                const rect = wheelCanvas.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left - centerX;
+                const y = (e.clientY || e.touches[0].clientY) - rect.top - centerY;
+                return Math.atan2(y, x);
+            }
+            
+            // 更新详细信息
+            function updateDetail() {
+                const selectedIndex = Math.floor(((3 * Math.PI / 2 - currentRotation) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) / sliceAngle) % 12;
+                const selectedConstellation = constellationData[selectedIndex];
+                const matchData = compatibilityData[relationship][constellation.name][selectedConstellation.name];
+                
+                const detailContent = document.getElementById('match-detail-content');
+                
+                // 根据匹配度设置颜色
+                let matchColor;
+                if (matchData.rate >= 90) {
+                    matchColor = 'text-green-400';
+                } else if (matchData.rate >= 80) {
+                    matchColor = 'text-blue-400';
+                } else if (matchData.rate >= 70) {
+                    matchColor = 'text-yellow-400';
+                } else if (matchData.rate >= 60) {
+                    matchColor = 'text-orange-400';
+                } else {
+                    matchColor = 'text-red-400';
+                }
+                
+                detailContent.innerHTML = `
+                    <div class="text-center">
+                        <div class="text-6xl mb-4">${selectedConstellation.symbol}</div>
+                        <h3 class="text-2xl font-bold mb-2">${selectedConstellation.name}</h3>
+                        <div class="text-sm text-gray-400 mb-4">${selectedConstellation.element}象星座</div>
+                        
+                        <div class="bg-gray-800 rounded-lg p-4 mb-4">
+                            <div class="text-sm text-gray-400 mb-2">匹配度 (${relationshipNames[relationship]})</div>
+                            <div class="text-5xl font-bold ${matchColor} mb-2">${matchData.rate}%</div>
+                            <div class="w-full bg-gray-700 rounded-full h-3">
+                                <div class="h-3 rounded-full transition-all duration-500" style="width: ${matchData.rate}%; background: linear-gradient(to right, #6366f1, #f472b6);"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-800 rounded-lg p-4 mb-4 text-left">
+                            <h4 class="font-semibold mb-2 text-primary">匹配分析</h4>
+                            <p class="text-gray-300 text-sm">${matchData.description}</p>
+                        </div>
+                        
+                        <div class="bg-gray-800 rounded-lg p-4 text-left">
+                            <h4 class="font-semibold mb-2 text-primary">相处建议</h4>
+                            <ul class="list-disc list-inside text-gray-300 text-sm space-y-1">
+                                ${matchData.suggestions.map(s => `<li>${s}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 鼠标/触摸事件
+            wheelCanvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                lastAngle = getAngle(e);
+            });
+            
+            wheelCanvas.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const angle = getAngle(e);
+                    const delta = angle - lastAngle;
+                    currentRotation += delta;
+                    lastAngle = angle;
+                    drawWheel(currentRotation);
+                    updateDetail();
+                }
+            });
+            
+            wheelCanvas.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+            
+            wheelCanvas.addEventListener('mouseleave', () => {
+                isDragging = false;
+            });
+            
+            // 触摸事件
+            wheelCanvas.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                lastAngle = getAngle(e);
+                e.preventDefault();
+            });
+            
+            wheelCanvas.addEventListener('touchmove', (e) => {
+                if (isDragging) {
+                    const angle = getAngle(e);
+                    const delta = angle - lastAngle;
+                    currentRotation += delta;
+                    lastAngle = angle;
+                    drawWheel(currentRotation);
+                    updateDetail();
+                    e.preventDefault();
+                }
+            });
+            
+            wheelCanvas.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+            
+            // 初始绘制
+            drawWheel(currentRotation);
+            updateDetail();
+            
+            // 显示所有匹配结果
+            allMatch.classList.remove('hidden');
+        }
+
+        // 计算按钮点击事件
+        calculateBtn.addEventListener('click', async () => {
+            try {
+                // 显示加载状态
+                showLoading();
+                
+                // 获取表单数据
+                const name1 = document.getElementById('name1').value.trim() || '你';
+                const calendar1 = document.querySelector('input[name="calendar1"]:checked').value;
+                const birthdate1 = document.getElementById('birthdate1').value;
+                const gender1 = document.querySelector('input[name="gender1"]:checked').value;
+                const birthplace1 = document.getElementById('birthplace1').value.trim();
+                
+                const name2 = document.getElementById('name2').value.trim();
+                const calendar2 = document.querySelector('input[name="calendar2"]:checked').value;
+                const birthdate2 = document.getElementById('birthdate2').value;
+                const gender2 = document.querySelector('input[name="gender2"]:checked').value;
+                const birthplace2 = document.getElementById('birthplace2').value.trim();
+                
+                const relationship = document.querySelector('input[name="relationship"]:checked').value;
+                
+                // 验证必填字段
+                if (!birthdate1) {
+                    showError('请输入第一个人的生日');
+                    return;
+                }
+                
+                // 计算星座
+                const constellation1 = calculateConstellation(birthdate1);
+                
+                if (!constellation1) {
+                    showError('无法计算第一个人的星座，请检查生日格式');
+                    return;
+                }
+                
+                // 存储第一个人的信息
+                await saveUserInfo(name1, gender1, birthdate1, birthplace1, constellation1);
+                
+                // 显示第一个人的星座信息
+                displayPersonInfo(1, name1, constellation1);
+                
+                // 判断是否有第二个人
+                if (name2 && birthdate2) {
+                    // 计算第二个人的星座
+                    const constellation2 = calculateConstellation(birthdate2);
+                    
+                    if (!constellation2) {
+                        showError('无法计算第二个人的星座，请检查生日格式');
+                        return;
+                    }
+                    
+                    // 存储第二个人的信息
+                    await saveUserInfo(name2, gender2, birthdate2, birthplace2, constellation2);
+                    
+                    // 显示第二个人的星座信息
+                    displayPersonInfo(2, name2, constellation2);
+                    
+                    // 显示两个人的匹配结果
+                    const matchData = await displayTwoPersonMatch(name1, name2, gender1, gender2, constellation1, constellation2, relationship);
+                    
+                    // 存储匹配结果
+                    if (matchData) {
+                        await saveMatchResult(
+                            { name: name1, gender: gender1, constellation: constellation1 },
+                            { name: name2, gender: gender2, constellation: constellation2 },
+                            relationship,
+                            matchData.score,
+                            matchData.analysis
+                        );
+                        showSuccess('匹配结果已保存');
+                    }
+                    
+                    // 隐藏所有星座的匹配结果
+                    allMatch.classList.add('hidden');
+                } else {
+                    // 隐藏第二个人的信息
+                    person2Info.classList.add('hidden');
+                    
+                    // 隐藏两个人的匹配结果
+                    twoPersonMatch.classList.add('hidden');
+                    
+                    // 显示与所有星座的匹配结果
+                    displayAllMatches(name1, constellation1, relationship);
+                }
+                
+                // 显示结果部分
+                resultSection.classList.remove('hidden');
+                
+                // 加载历史记录
+                await showMatchHistory();
+                
+                // 滚动到结果部分
+                resultSection.scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                console.error('计算匹配时发生错误:', error);
+                showError('计算匹配时发生错误，请稍后重试');
+            } finally {
+                // 隐藏加载状态
+                hideLoading();
+            }
+        });
+
+        // 返回顶部按钮点击事件
+        backToTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // 滚动事件监听
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTopBtn.style.opacity = '1';
+            } else {
+                backToTopBtn.style.opacity = '0';
+            }
+        });
+
+        // 单选按钮样式
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                // 找到同组的所有单选按钮
+                const name = this.getAttribute('name');
+                document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
+                    // 找到对应的div
+                    const div = r.parentElement.nextElementSibling;
+                    if (r.checked) {
+                        div.classList.add('radio-checked');
+                    } else {
+                        div.classList.remove('radio-checked');
+                    }
+                });
+            });
+        });
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            createStars();
+            createConstellationPatterns();
+            
+            // 设置默认日期为今天
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const defaultDate = `${year}-${month}-${day}`;
+            
+            document.getElementById('birthdate1').value = defaultDate;
+            document.getElementById('birthdate2').value = defaultDate;
+            
+            // 添加页面加载动画
+            document.body.classList.add('opacity-0');
+            setTimeout(() => {
+                document.body.classList.add('transition-opacity', 'duration-1000');
+                document.body.classList.remove('opacity-0');
+            }, 100);
+        });
+    </script>
+
+</body></html>
